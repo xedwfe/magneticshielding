@@ -1,17 +1,17 @@
 """
 Magnetic Shielding Factor Analysis
 
-This code analyzes and plots the shielding factor (SF) for spherical and cylindrical shells
-as a function of relative permeability. The analysis is based on analytical solutions for
+This code analyzes and plots the shielding factor (S) for spherical and cylindrical shells
+as a function of relative permeability. The analysis is based on solutions for
 magnetostatic shielding in hollow geometries.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-# =================================================================
-# Simulation Parameters
-# =================================================================
+# ===========================================================================================
+# Parameters
+# ===========================================================================================
 
 mu_r_default = 1000.0  # Default relative permeability for single-point analysis
 H0 = 1.0               # Applied magnetic field intensity (A/m)
@@ -32,7 +32,8 @@ def sphere_shielding_factor(mu_r, a, b):
     """
     denominator = (mu_r + 2) * (2 * mu_r + 1) - 2 * (a**3 / b**3) * (mu_r - 1)**2
     H_int = (9 * mu_r * H0) / denominator
-    SF = H0 / H_int
+    #SF = H0 / H_int
+    SF = (2/9)*mu_r*(1-a**3 / b**3)+1
     return SF
 
 def cylinder_shielding_factor(mu_r, a, b):
@@ -44,7 +45,8 @@ def cylinder_shielding_factor(mu_r, a, b):
     """
     denominator = (mu_r + 1)**2 * b**2 - (mu_r - 1)**2 * a**2
     H_int = (4 * mu_r * b**2) / denominator * H0
-    SF = H0 / H_int
+    #SF = H0 / H_int
+    SF = (1/4)*mu_r*(1-a**2 / b**2)+1
     return SF
 
 # =================================================================
@@ -82,30 +84,30 @@ def plot_shielding_factor_analysis(a, b, H0=1.0, mu_r_min=1, mu_r_max=50000, num
     fig, ax = plt.subplots(1, 1, figsize=(10, 7))
     
     # Plot shielding factor curves
-    line_sphere, = ax.loglog(mu_r_values, SF_sphere, 'b-', linewidth=2.5, 
+    line_sphere, = ax.loglog(mu_r_values, SF_sphere, 'b-', linewidth=3.5, 
                             label=f'Spherical shell (a={a:.1f}m, b={b:.1f}m)')
-    line_cylinder, = ax.loglog(mu_r_values, SF_cylinder, 'g-', linewidth=2.5,
+    line_cylinder, = ax.loglog(mu_r_values, SF_cylinder, 'g-', linewidth=3.5,
                               label=f'Cylindrical shell (transverse field)')
     
-    # Highlight asymptotic limits
-    if mu_r_max > 100:
+   # # Highlight asymptotic limits
+   # if mu_r_max > 100:
         # Calculate asymptotic limits for high permeability
-        SF_sphere_asymptote = (2/9) * mu_r_values * (1 - (a**3)/(b**3))
-        SF_cylinder_asymptote = (1/4) * mu_r_values * (1 - (a**2)/(b**2))
+   #    SF_sphere_asymptote = (2/9) * mu_r_values * (1 - (a**3)/(b**3))
+  #      SF_cylinder_asymptote = (1/4) * mu_r_values * (1 - (a**2)/(b**2))
         
-        ax.loglog(mu_r_values[mu_r_values > 100], SF_sphere_asymptote[mu_r_values > 100], 
-                 'b--', linewidth=1.0, alpha=0.7, label='Asymptote: SF ∝ μᵣ (sphere)')
-        ax.loglog(mu_r_values[mu_r_values > 100], SF_cylinder_asymptote[mu_r_values > 100], 
-                 'g--', linewidth=1.0, alpha=0.7, label='Asymptote: SF ∝ μᵣ (cylinder)')
+  #      ax.loglog(mu_r_values[mu_r_values > 100], SF_sphere_asymptote[mu_r_values > 100], 
+  #               'b--', linewidth=1.0, alpha=0.7, label='Asymptote: SF ∝ μᵣ (sphere)')
+  #      ax.loglog(mu_r_values[mu_r_values > 100], SF_cylinder_asymptote[mu_r_values > 100], 
+ #                'g--', linewidth=1.0, alpha=0.7, label='Asymptote: SF ∝ μᵣ (cylinder)')
     
     # Configure plot aesthetics
-    ax.set_xlabel('Relative Permeability (μᵣ)', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Shielding Factor (SF = H₀/Hᵢₙₜ)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Relative Permeability (μᵣ)', fontsize=20, fontweight='bold')
+    ax.set_ylabel('Shielding Factor (SF = H₀/Hᵢₙₜ)', fontsize=20, fontweight='bold')
     ax.set_title('Magnetic Shielding Factor vs Relative Permeability', 
-                 fontsize=14, fontweight='bold', pad=15)
+                 fontsize=18, fontweight='bold', pad=15)
     
     ax.grid(True, alpha=0.3, linestyle='--', which='both')
-    ax.legend(fontsize=10, framealpha=0.9, loc='upper left')
+    ax.legend(fontsize=20, framealpha=0.9, loc='upper left')
     
     # Set axis limits
     ax.set_xlim(mu_r_min, mu_r_max)
@@ -139,7 +141,7 @@ def plot_shielding_factor_analysis(a, b, H0=1.0, mu_r_min=1, mu_r_max=50000, num
                        xy=(mu_r_point, sf_sphere_val),
                        xytext=(mu_r_point*1.5, sf_sphere_val*0.7),
                        arrowprops=dict(arrowstyle='->', color='blue', alpha=0.6),
-                       fontsize=8,
+                       fontsize=16,
                        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
     
     # Calculate and display performance metrics
@@ -164,15 +166,15 @@ def plot_shielding_factor_analysis(a, b, H0=1.0, mu_r_min=1, mu_r_max=50000, num
   #          bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
     
     # Add equation references
-    eq_text = (r'$SF_{sphere} \approx \frac{2}{9}\mu_r\left(1-\frac{a^3}{b^3}\right)$ (μᵣ ≫ 1)'
+    eq_text = (r'$SF_{sphere} \approx \frac{2}{9}\mu_r\left(1-\frac{a^3}{b^3}\right)+1$ (μᵣ ≫ 1)'
                '\n'
-               r'$SF_{cyl} \approx \frac{1}{4}\mu_r\left(1-\frac{a^2}{b^2}\right)$ (μᵣ ≫ 1)')
+               r'$SF_{cyl} \approx \frac{1}{4}\mu_r\left(1-\frac{a^2}{b^2}\right)+1$ (μᵣ ≫ 1)')
     
     ax.text(0.98, 0.02, eq_text,
             transform=ax.transAxes,
             verticalalignment='bottom',
             horizontalalignment='right',
-            fontsize=9,
+            fontsize=16,
             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
     
     plt.tight_layout()
