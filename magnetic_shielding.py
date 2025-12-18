@@ -140,27 +140,27 @@ fig, axes = plt.subplots(1, 2, figsize=(18, 8), dpi=100)
 
 # Plotting the SPHERE
 ax1 = axes[0]
-ax1.set_title(f'(a) Magnetic Shielding - Sphere ($\\mu_r$ = {mu_r})', fontsize=16, fontweight='bold')
-ax1.streamplot(X, Y, Hx_esf, Hy_esf, density=[1.0, 2.0], color='blue', linewidth=1, arrowsize=1.5)
+ax1.set_title(f'(a) Magnetic Shielding - Sphere ($\\mu_r$ = {mu_r})', fontsize=20, fontweight='bold')
+ax1.streamplot(X, Y, Hx_esf, Hy_esf, density=[1.0, 2.0], color='blue', linewidth=1.2, arrowsize=1.7)
 ax1.add_patch(Circle((0, 0), b, color='lightgray', alpha=0.3, zorder=2))
 ax1.add_patch(Circle((0, 0), a, color='white', ec='k', linewidth=1.5, zorder=3))
 ax1.set_xlim(-L, L)
 ax1.set_ylim(-L, L)
-ax1.set_xlabel('X (m)', fontsize=14, fontweight='bold')
-ax1.set_ylabel('Y (m)', fontsize=14, fontweight='bold')
+ax1.set_xlabel('X (m)', fontsize=20, fontweight='bold')
+ax1.set_ylabel('Y (m)', fontsize=20, fontweight='bold')
 ax1.set_aspect('equal', adjustable='box')
 #ax1.text(0.1, 0.5, f'$H_{{int}} = {H_int_esf:.4f}$', transform=ax1.transAxes, fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
 
 
 # Cylinder plot
 ax2 = axes[1]
-ax2.set_title(f'(b) Magnetic Shielding - Cylinder ($\\mu_r$ = {mu_r})', fontsize=16, fontweight='bold')
-ax2.streamplot(X, Y, Hx_cil, Hy_cil, density=[1.0, 2.0], color='green', linewidth=1, arrowsize=1.5)
+ax2.set_title(f'(b) Magnetic Shielding - Cylinder ($\\mu_r$ = {mu_r})', fontsize=20, fontweight='bold')
+ax2.streamplot(X, Y, Hx_cil, Hy_cil, density=[1.0, 2.0], color='green', linewidth=1.2, arrowsize=1.7)
 ax2.add_patch(Circle((0, 0), b, color='lightgray', alpha=0.3, zorder=2))
 ax2.add_patch(Circle((0, 0), a, color='white', ec='k', linewidth=1.5, zorder=3))
 ax2.set_xlim(-L, L)
 ax2.set_ylim(-L, L)
-ax2.set_xlabel('X (m)', fontsize=14, fontweight='bold')
+ax2.set_xlabel('X (m)', fontsize=20, fontweight='bold')
 ax2.set_aspect('equal', adjustable='box')
 #ax2.text(0.1, 0.5, f'$H_{{int}} = {H_int_cil:.4f}$', transform=ax2.transAxes, fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
 
@@ -171,19 +171,19 @@ plt.show()
 # Shielding Factor (SF)
 # =================================================================
 
-print("\n" + "="*50)
-print(f"RESULTS FOR SHIELDING (H0 = {H0:.1f}, μr = {mu_r:.1f}, a={a:.1f}, b={b:.1f})")
-print("="*50)
+#print("\n" + "="*50)
+#print(f"RESULTS FOR SHIELDING (H0 = {H0:.1f}, μr = {mu_r:.1f}, a={a:.1f}, b={b:.1f})")
+#print("="*50)
 
 # SPHERE
-print(f"1. SPHERE (Based on the solution for spherical shielding):")
-print(f"   Residual Internal Field (H_int): {H_int_esf:.6f} * H0")
-print(f"   Shielding Factor (SF): {SF_esf:.2f}")
+#print(f"1. SPHERE (Based on the solution for spherical shielding):")
+#print(f"   Residual Internal Field (H_int): {H_int_esf:.6f} * H0")
+#print(f"   Shielding Factor (SF): {SF_esf:.2f}")
 
 # Cylinder
-print(f"\n2. INFINITE CYLINDER (Field perpendicular to the axis):")
-print(f"   Residual Internal Field (H_int): {H_int_cil:.6f} * H0")
-print(f"   Shielding Factor (SF_T): {SF_cil:.2f}")
+#print(f"\n2. INFINITE CYLINDER (Field perpendicular to the axis):")
+#print(f"   Residual Internal Field (H_int): {H_int_cil:.6f} * H0")
+#print(f"   Shielding Factor (SF_T): {SF_cil:.2f}")
 
-if SF_esf > SF_cil:
-    print(f"In this example, SF_sphere ({SF_esf:.2f}) is larger than SF_cylinder ({SF_cil:.2f}) by a factor of {SF_esf/SF_cil:.2f}.")
+#if SF_esf > SF_cil:
+#    print(f"In this example, SF_sphere ({SF_esf:.2f}) is larger than SF_cylinder ({SF_cil:.2f}) by a factor of {SF_esf/SF_cil:.2f}.")
