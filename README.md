@@ -28,14 +28,17 @@ article derives these results.
 
 ## Quick start
 
-**Without installation.** Open `magnetic_shielding_interactive.ipynb` on Google
-Colab (File > Open notebook > GitHub, then paste the address of this
-repository) or launch the repository on Binder, and run all cells. The
-notebook is self-contained.
+**Without installation.** Open the notebook directly in a web browser and run
+all cells; it is self-contained.
+
+* Binder (no account needed):
+  https://mybinder.org/v2/gh/xedwfe/magneticshielding/HEAD?labpath=magnetic_shielding_interactive.ipynb
+* Google Colab (requires a Google account):
+  https://colab.research.google.com/github/xedwfe/magneticshielding/blob/main/magnetic_shielding_interactive.ipynb
 
 **Locally.**
 
-    pip install -r requirements.txt
+    pip install -r requirements.txt jupyter
     jupyter notebook magnetic_shielding_interactive.ipynb
 
 ## Files
@@ -44,9 +47,9 @@ notebook is self-contained.
 |---|---|
 | `magnetic_shielding_interactive.ipynb` | Interactive notebook: field maps of both shells with sliders for `mu_r`, `a/b`, `H0`, `b`, the window half-width `L` and the grid resolution `N`; sections on the shielding-factor curve, on the comparison between sphere and cylinder, and on `B` versus `H`. |
 | `shielding.py` | The exact solution and derived quantities (single source of the physics). |
-| `paper_figures.py` | Regenerates every figure of the article and of Supplementary Material II as vector PDF. |
+| `paper_figures.py` | Regenerates every figure of the article and the code-generated figures of Supplementary Materials I and II as vector PDF. |
 | `explore_shielding.py` | Command-line exploration without Jupyter (field maps, tables, curves, crossing point). |
-| `verify_revision_claims.py` | Checks every quantitative statement of the article and the consistency of the code (59 checks). |
+| `verify_revision_claims.py` | Checks every quantitative statement of the article and of its supplements, and the consistency of the code (86 checks). |
 | `verify_cavity_uniformity.py` | Independent check, by a finite-volume solution, that the cavity field is exactly uniform. |
 | `build_notebook.py` | Maintainer tool: rebuilds the notebook from `shielding.py`. |
 | `requirements.txt` | Python packages. |
@@ -60,12 +63,14 @@ notebook is self-contained.
 | `fig1_geometry.pdf` | Article, figure 1 |
 | `fig2_field_maps.pdf` | Article, figure 2 |
 | `fig3_shielding_factor.pdf` | Article, figure 3 |
+| `sm1_cylinder_section.pdf` | Supplementary Material I, figure 4 |
 | `sm1_sphere_section.pdf` | Supplementary Material I, figure 5 |
 | `sm2_fig2_mu_sweep.pdf` | Supplementary Material II, figure 2 |
 | `sm2_fig3_geometry.pdf` | Supplementary Material II, figure 3 |
 | `sm2_fig4_B_vs_H.pdf` | Supplementary Material II, figure 4 |
 
-Figure 1 of Supplementary Material II is a screenshot of the notebook.
+Figure 1 of Supplementary Material II is a screenshot of the notebook, and
+figures 1 to 3 of Supplementary Material I are hand-drawn illustrations.
 
 ## Exploring without Jupyter
 
@@ -86,25 +91,31 @@ Each command prints its numbers; the plotting commands also save a PNG file
 
 The first script checks the closed forms against direct solutions of the
 interface conditions, the crossing point, the limits and their reading in
-terms of demagnetising factors, the shielding of higher harmonics, the cloaking
+terms of demagnetizing factors, the shielding of higher harmonics, the cloaking
 condition, every number quoted in the article, the continuity of the
 tangential component of `H` and of the normal component of `B` for the plotted
 fields, and the agreement between `shielding.py`, an independent
 implementation and the notebook. The second solves the radial problem by finite
 volumes and shows that the cavity field is uniform to rounding error.
 
-## Conventions and idealisations
+## Conventions and idealizations
 
 The sphere is shown in a meridian plane and the cylinder in its transverse
 plane, with the applied field pointing to the right. Field strengths are given
 in units of `H0` and flux densities in units of `mu0 H0`; the white curves of
 the maps are streamlines of `B`, whose spacing carries no information about the
 field strength. The model assumes a linear, isotropic and homogeneous material
-with constant permeability, a static uniform applied field, an infinitely long
+with a field-independent permeability, a static uniform applied field, an infinitely long
 cylinder and closed shells without holes or seams; saturation, hysteresis,
 finite length and apertures are outside its scope.
 
 ## History
+
+**Version 3.1 (2026, final revision of the article).**
+`verify_revision_claims.py` extended to every quantitative statement of the
+article and of both supplements (86 checks). `paper_figures.py` adds the polar
+coordinates to the two sections of Supplementary Material I and now also
+produces its figure 4. Direct Binder and Colab links added to this file.
 
 **Version 3.0 (2026, revision of the article).**
 `shielding.py` introduced, with one derivation for both geometries.

@@ -68,7 +68,7 @@ md(r"""
 
 Sliders: relative permeability `mu_r`, radius ratio `a/b`, applied field `H0`,
 outer radius `b`, half-width `L` of the window and grid resolution `N`.
-Changing `H0` leaves every normalised quantity unchanged: the model is linear, so
+Changing `H0` leaves every normalized quantity unchanged: the model is linear, so
 the shielding factor does not depend on the applied field (in real materials it
 does, through saturation).
 """),
@@ -117,9 +117,10 @@ md(r"""
 ## 3. The shielding factor as a function of $\mu_r$ (Activity 2)
 
 The exact curves of article figure 3(a), for the value of $a/b$ chosen with the
-slider. The dotted line is the high-permeability approximation
+slider. The dotted line is the common high-permeability approximation
 $SF \approx C_d(1-k_d)\mu_r + 1$ for the sphere, which exceeds the exact value by
-$C_d(1-k_d)(2-1/\mu_r)$.
+$C_d(1-k_d)(2-1/\mu_r)$ (in article figure 3(a) the dotted line is instead the
+linear behaviour $C_d(1-k_d)\mu_r$, which meets the plateau at the crossover).
 """),
 code(r"""
 def plot_sf(ratio=0.5):
@@ -215,9 +216,9 @@ md(r"""
    and check that the shielding factor is unchanged under $\mu_r \to 1/\mu_r$.
    Interpret the limit $\mu_r \to 0$ (Supplementary Material I, section 6).
 3. Verify numerically the cloaking condition of Supplementary Material I,
-   section 7: for a superconducting core of radius $R_1$ inside a shell of outer
-   radius $R_2$ with $\mu_r = [(d-1)R_2^d + R_1^d]/[(d-1)(R_2^d - R_1^d)]$, the
-   field outside the shell equals the applied field.
+   section 7: for a superconducting layer of radius $a$ lining a shell of outer
+   radius $b$ with $\mu_r = [(d-1)b^d + a^d]/[(d-1)(b^d - a^d)]$, the field
+   outside the shell equals the applied field.
 4. Add a second concentric shell; this requires solving a larger linear system
    with the same interface conditions.
 """),

@@ -1,7 +1,8 @@
 """
 paper_figures.py -- reproduces every figure of the revised manuscript
 "Magnetic shielding as a motivational tool in teaching classical
-electromagnetic theory" (EJP-110956) and of its Supplementary Material II.
+electromagnetic theory" (EJP-110956) and of its Supplementary Materials I
+(figures 4 and 5) and II (figures 2 to 4).
 
 Offline: numpy + matplotlib only. All figures are written as vector PDF at
 their final printed width (446 pt = 6.2 in), so that fonts are legible at
@@ -16,7 +17,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from matplotlib.patches import Circle, FancyArrowPatch, Wedge
+from matplotlib.patches import Arc, Circle, FancyArrowPatch, Wedge
 
 plt.rcParams.update({
     "font.size": 10, "axes.labelsize": 10.5, "axes.titlesize": 10.5,
@@ -63,7 +64,8 @@ def field_map(ax, geom, mu, a, b, L=4.0, quantity="B", annotate=True,
 
 
 # ------------------------------------------------- figure 1: schematics
-def schematic(ax, geom):
+def schematic(ax, geom, polar=False):
+    """Shell geometry; polar=True adds the polar coordinates used in SM I."""
     a, b = 1.0, 1.75
     ax.add_patch(Circle((0, 0), b, fc="#cfe0f5", ec="k", lw=1.2))
     ax.add_patch(Circle((0, 0), a, fc="white", ec="k", lw=1.2))
@@ -98,6 +100,14 @@ def schematic(ax, geom):
         ax.add_patch(Circle((0, 0), 0.025, fc="k", ec="k", zorder=6))
         ax.text(0.14, 0.10, "$z$", fontsize=10)
         ax.text(0, -2.3, "infinitely long along $z$", ha="center", fontsize=9)
+    if polar:                                  # (rho, theta) or (r, theta), theta from H0
+        ang, R = np.deg2rad(20), 2.45
+        ax.add_patch(FancyArrowPatch((0, 0), (R * np.cos(ang), R * np.sin(ang)),
+                     arrowstyle="-|>", mutation_scale=9, lw=1.0, color="#2a8c3a", zorder=4))
+        ax.text(R * np.cos(ang) + 0.02, R * np.sin(ang) + 0.12,
+                r"$\rho$" if geom == "cyl" else "$r$", fontsize=11, color="#2a8c3a")
+        ax.add_patch(Arc((0, 0), 1.3, 1.3, theta1=0, theta2=20, color="0.25", lw=0.9, zorder=4))
+        ax.text(0.74, 0.07, r"$\theta$", fontsize=10)
     ax.set_xlim(-3.5, 3.4); ax.set_ylim(-2.6, 2.6); ax.set_aspect("equal")
     ax.axis("off")
 
@@ -110,7 +120,7 @@ def figure1():
     fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.01, wspace=0.05)
     fig.savefig("fig1_geometry.pdf")
     for i, g in enumerate(("sph", "cyl")):     # single panels for SM I
-        f, ax = plt.subplots(figsize=(3.4, 2.6)); schematic(ax, g)
+        f, ax = plt.subplots(figsize=(3.4, 2.6)); schematic(ax, g, polar=True)
         f.subplots_adjust(left=0, right=1, top=1, bottom=0)
         f.savefig(f"sm1_{'sphere' if g == 'sph' else 'cylinder'}_section.pdf")
         plt.close(f)
@@ -234,7 +244,7 @@ def sm2_B_vs_H(mu=1000.0, a=1.0, b=2.0):
     axs[0].set_title(r"(a) $|\vec B|/(\mu_0H_0)$", pad=3)
     axs[1].set_title(r"(b) $|\vec H|/H_0$", pad=3)
     cb = fig.colorbar(im, ax=axs, shrink=0.92, pad=0.01)
-    cb.set_label("field magnitude (normalised)")
+    cb.set_label("field magnitude (normalized)")
     fig.savefig("sm2_fig4_B_vs_H.pdf", dpi=300)
     plt.close(fig)
 

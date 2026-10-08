@@ -222,4 +222,177 @@ for d, g in ((2, "cyl"), (3, "sph")):
 ok17 &= np.isclose(sh.regime_crossover(0.5, 3), 9/(2*(1 - 0.125))) and np.isclose(sh.regime_crossover(0.5, 2), 4/(1 - 0.25))
 check("shielding.py helper functions agree with independent solutions", ok17)
 
+
+# ============================================================================
+# 18-27. Statements of the final revision (main text, Supplementary Materials
+#        I and II), each checked against the exact solution.
+# ============================================================================
+def SFd(mu, x, d):
+    return 1 + (d - 1) / d**2 * (1 - x**d) * (mu - 1)**2 / mu
+
+# 18. section 2.3: numbers quoted for the sphere with a/b = 1/2
+A = (2/9) * (1 - 0.125)
+mm = np.linspace(1, 10, 900001)
+rel = (A*mm + 1)/SF_sph(mm, .5) - 1
+check("2.3: '+1' excess 19% at mu=1, max 27% at mu~2.2, 14% at mu=10",
+      round(100*rel[0]) == 19 and round(100*rel.max()) == 27
+      and abs(mm[rel.argmax()] - 2.2) < 0.05 and round(100*rel[-1]) == 14)
+hint = [100/SF_sph(m, .5) for m in (10, 100, 1000)]
+check("2.3: cavity field 39%, 5.0%, 0.51% of H0 and SF ~ 2.6, 20, 195 (mu = 10, 100, 1000)",
+      round(hint[0]) == 39 and round(hint[1], 1) == 5.0 and round(hint[2], 2) == 0.51
+      and round(SF_sph(10, .5), 1) == 2.6 and round(SF_sph(100, .5)) == 20 and round(SF_sph(1000, .5)) == 195)
+check("2.3: crossover mu* = 1/[C_d(1-k_d)] is about 5 for a/b = 1/2 (both shells)",
+      round(9/(2*(1 - .125))) == 5 and round(4/(1 - .25)) == 5)
+
+# 19. section 2.4: geometry comparison
+xg = np.linspace(1e-4, 1 - 1e-4, 4001)
+rat = (8/9)*(1 + xg + xg**2)/(1 + xg)
+check("2.4: (SF_sph-1)/(SF_cyl-1) increases monotonically from 8/9 to 4/3",
+      np.all(np.diff(rat) > 0) and abs(rat[0] - 8/9) < 1e-3 and abs(rat[-1] - 4/3) < 1e-3)
+MU, XX = np.meshgrid(np.logspace(-4, 8, 121), np.linspace(0.001, 0.999, 120))
+bracket = (2/9)*(1 - XX**3) - (1/4)*(1 - XX**2)
+diff = SF_sph(MU, XX) - SF_cyl(MU, XX)
+nz = np.abs(MU - 1) > 1e-9
+check("2.4: SF_sph - SF_cyl has the sign of the geometric bracket for every mu != 1",
+      np.all(np.sign(diff[nz]) == np.sign(bracket[nz])))
+check("2.4: advantage of the cylinder stays below 9/8 and approaches it for x->0, mu->inf",
+      np.all(SF_cyl(MU, XX)/SF_sph(MU, XX) < 9/8)
+      and abs(SF_cyl(1e9, 1e-6)/SF_sph(1e9, 1e-6) - 9/8) < 1e-4)
+check("2.4: advantage of the sphere tends to 4/3 for thin shells with mu(1-x) >> 1",
+      abs(SF_sph(1e9, 0.999)/SF_cyl(1e9, 0.999) - 4/3) < 2e-3
+      and abs(SF_sph(10, 0.999)/SF_cyl(10, 0.999) - 1) < 2e-3)
+check("2.4: SF_sph/SF_cyl = 1.04 (a/b=0.5) and 0.95 (a/b=0.3, 216.8 vs 228.0) at mu=1000",
+      round(SF_sph(1000, .5)/SF_cyl(1000, .5), 2) == 1.04 and round(SF_sph(1000, .3)/SF_cyl(1000, .3), 2) == 0.95
+      and round(SF_sph(1000, .3), 1) == 216.8 and round(SF_cyl(1000, .3), 1) == 228.0)
+check("2.4: C_d = N(1-N) with N = 1/d", all(np.isclose((d-1)/d**2, (1/d)*(1 - 1/d)) for d in (2, 3)))
+# axial field on an infinite cylinder: the uniform field H0 z satisfies every interface condition
+th_ = np.linspace(0, 2*np.pi, 37)
+n_r = np.array([np.cos(th_), np.sin(th_), 0*th_])        # normal of the cylinder surfaces
+H_ax = np.array([0, 0, 1.0])[:, None] * np.ones_like(th_)
+check("2.4: a uniform axial field satisfies the interface conditions of an infinite cylinder (no shielding)",
+      np.allclose((H_ax*n_r).sum(0), 0) and np.allclose(1000*(H_ax*n_r).sum(0), (H_ax*n_r).sum(0)))
+
+# 20. section 2.5: the determinants reduce to the denominators of equations (1) and (2)
+ok20 = True
+for m_ in (0.3, 7.0, 1000.0):
+    for x in (0.2, 0.7):
+        ok20 &= np.isclose(det_c(m_, x, 1), (m_ + 1)**2 - (m_ - 1)**2*x**2)
+        ok20 &= np.isclose(det_s(m_, x, 1), (m_ + 2)*(2*m_ + 1) - 2*x**3*(m_ - 1)**2)
+check("2.5: nu = l = 1 determinants are the denominators of equations (1) and (2) (times b^2, b^3)", ok20)
+
+# 21. section 3 and figure 2: fields for mu_r = 1000, a/b = 1/2
+def field_at(rr, tt, mu, a, b, d):
+    Hu, Hv, mr, SF = sh.fields(rr*np.cos(tt), rr*np.sin(tt), mu, a, b, d)
+    return np.hypot(Hu, Hv), mr, SF
+ok21a = ok21b = ok21c = ok21d = True
+vals = {}
+for d in (3, 2):
+    a_, b_, mu_ = 1.0, 2.0, 1000.0
+    Hint_ = 1/SFd(mu_, .5, d)
+    rr, tt = np.meshgrid(np.linspace(a_*(1 + 1e-12), b_*(1 - 1e-12), 401), np.linspace(0, np.pi, 721))
+    Hs, mr, _ = field_at(rr, tt, mu_, a_, b_, d)
+    ok21a &= bool(np.all(mr == mu_))                                  # every sample lies in the wall
+    Bs = mr*Hs
+    i = np.unravel_index(Bs.argmax(), Bs.shape)
+    ok21a &= np.isclose(rr[i], a_) and np.isclose(tt[i], np.pi/2) and np.isclose(Bs.max(), mu_*Hint_, rtol=1e-9)
+    ok21a &= round(Bs.max()) == 5
+    eps = 1e-10
+    H_in_eq, _, _ = field_at(b_*(1 - eps), np.pi/2, mu_, a_, b_, d)
+    H_out_eq, _, _ = field_at(b_*(1 + eps), np.pi/2, mu_, a_, b_, d)
+    H_in_po, _, _ = field_at(b_*(1 - eps), 0.0, mu_, a_, b_, d)
+    H_out_po, _, _ = field_at(b_*(1 + eps), 0.0, mu_, a_, b_, d)
+    ok21b &= np.isclose(H_out_eq, H_in_eq, rtol=1e-6) and H_out_eq < 1e-2            # weak, = |H| in wall
+    ok21b &= np.isclose(H_out_po, mu_*H_in_po, rtol=1e-6) and H_out_po > 1.5          # strong, = |B| in wall
+    ok21c &= Hs.max() < 6e-3 and round(1e3*Hs.max()) == 5 and Hs.max() < 1e-2      # 'about 5e-3', > 2 orders below H0
+    ok21c &= np.isclose(H_out_po/H_in_po, mu_, rtol=1e-6)                           # factor mu_r at the poles
+    vals[d] = (SFd(mu_, .5, d), Hint_, H_out_po)
+ok21d = (round(vals[3][0], 1) == 195.1 and round(vals[2][0], 1) == 188.1
+         and round(1e3*vals[3][1], 1) == 5.1 and round(1e3*vals[2][1], 1) == 5.3)
+check("3: max |B| in the wall = mu_r B_int, about 5 mu0 H0, on the inner surface at the equator", ok21a)
+check("3: outside field = |H| of the wall at the equator (weak) and = |B| of the wall at the poles (strong)", ok21b)
+check("3: |H| in the wall at most ~5e-3 H0, and smaller than in the vacuum at the poles by exactly mu_r", ok21c)
+check("3/fig. 2: SF = 195.1 and 188.1, H_int/H0 = 5.1e-3 and 5.3e-3", ok21d)
+mu_line = np.logspace(0, 5, 2001)
+r05 = SF_sph(mu_line, .5)/SF_cyl(mu_line, .5)
+check("3/fig. 3(a): for a/b = 1/2 the two curves differ by less than 4% at every mu_r",
+      np.all((r05 >= 1 - 1e-12) & (r05 < 1.04)))
+check("3: SF -> infinity as mu_r -> 0 (ideal superconducting shell)", SF_sph(1e-9, .5) > 1e7 and SF_cyl(1e-9, .5) > 1e7)
+
+# 22. Supplementary Material I, section 5: higher harmonics
+ok22 = True
+for d in (2, 3):
+    for x in np.linspace(0.3, 0.99, 50):     # x >= 0.3 keeps x**(m+s) resolvable in double precision
+        Sm = [sh.harmonic_shielding_factor(1000.0, x, m, d) for m in range(1, 9)]
+        ok22 &= bool(np.all(np.diff(Sm) > 0))
+        for m in range(1, 5):
+            ok22 &= np.isclose(sh.harmonic_shielding_factor(7.0, x, m, d),
+                               sh.harmonic_shielding_factor(1/7.0, x, m, d))
+check("SM I s5: S_m increases with m for every a/b, and S_m(mu) = S_m(1/mu)", ok22)
+ok22b = True
+for d in (2, 3):
+    for m in (1, 2, 3):
+        s_ = m + d - 2; t = 1e-6; mu_ = 1e9
+        ok22b &= np.isclose((sh.harmonic_shielding_factor(mu_, 1 - t, m, d) - 1)/(mu_*t), m*s_/(m + s_), rtol=1e-4)
+check("SM I s5: thin shell, S_m - 1 ~ [ms/(m+s)] mu_r t/b", ok22b)
+
+# 23. Supplementary Material I, section 6
+check("SM I s6: thin shells, (SF_sph-1)/(SF_cyl-1) -> 4/3 and SF ratio -> 4/3 only when mu t/b >> 1",
+      abs((SF_sph(10, 1-1e-6) - 1)/(SF_cyl(10, 1-1e-6) - 1) - 4/3) < 1e-5
+      and abs(SF_sph(1e12, 1-1e-6)/SF_cyl(1e12, 1-1e-6) - 4/3) < 1e-3)
+ok23 = True
+for d in (2, 3):
+    N = 1/d
+    for m_ in (0.5, 3.0, 50.0, 1e4):
+        hint_, P_, Q_, R_ = sh.first_harmonic_coefficients(m_, 1e-30, 1.0, d)
+        ok23 &= np.isclose(P_, 1/(1 + N*(m_ - 1)))                      # solid body
+        hint_, P_, Q_, R_ = sh.first_harmonic_coefficients(m_, 0.4, 1.0, d)
+        ok23 &= np.isclose(hint_/P_, m_/(1 + (1 - N)*(m_ - 1)))         # cavity amplification
+check("SM I s6: solid-body factor 1/[1+N(mu-1)] and cavity factor mu/[1+(1-N)(mu-1)]", ok23)
+
+# 24. Supplementary Material I, section 7: exercises
+ok24 = True
+for d in (2, 3):
+    hint_, P_, Q_, R_ = sh.first_harmonic_coefficients(1e-12, 0.6, 1.0, d)
+    ok24 &= abs(hint_) < 1e-9 and np.isclose(R_, -1.0/(d - 1), rtol=1e-9)
+check("SM I s7, exercise 1: mu_r -> 0 gives H_int -> 0 and R -> -b^d H0/(d-1)", ok24)
+ok24b = True
+for d in (2, 3):
+    a_, b_ = 0.7, 1.0
+    mu_cl = ((d - 1)*b_**d + a_**d)/((d - 1)*(b_**d - a_**d))
+    P_ = 1.0; Q_ = -P_*a_**d/(d - 1)
+    dphi_a = -P_ + (1 - d)*Q_*a_**(-d)                 # d/dr of (-P r + Q r^(1-d)) at r = a
+    ok24b &= abs(dphi_a) < 1e-12
+    # with R = 0 outside, the two conditions at r = b fix P and mu_r
+    M = np.array([[-b_ + b_**(1 - d)*(-a_**d/(d - 1))]]); P_sol = -b_/M[0, 0]
+    dphi_b = P_sol*(-1 + (1 - d)*(-a_**d/(d - 1))*b_**(-d))
+    ok24b &= np.isclose(mu_cl*dphi_b, -1.0)
+check("SM I s7, exercise 2: Q = -P a^d/(d-1) and cloak permeability [(d-1)b^d+a^d]/[(d-1)(b^d-a^d)]", ok24b)
+
+# 25. Supplementary Material II, activities 1-4
+check("SM II act. 2: SF = 2.6, 20.1, 195.1 (fig. 2) and '+1' formula 2.94 vs exact 2.57 at mu=10",
+      round(SF_sph(10, .5), 1) == 2.6 and round(SF_sph(100, .5), 1) == 20.1 and round(SF_sph(1000, .5), 1) == 195.1
+      and round(A*10 + 1, 2) == 2.94 and round(SF_sph(10, .5), 2) == 2.57)
+check("SM II act. 3: 109.2 vs 90.8 (a/b = 0.8) and 216.8 vs 228.0 (a/b = 0.3) at mu = 1000",
+      round(SF_sph(1000, .8), 1) == 109.2 and round(SF_cyl(1000, .8), 1) == 90.8
+      and round(SF_sph(1000, .3), 1) == 216.8 and round(SF_cyl(1000, .3), 1) == 228.0)
+def bisect(m_):
+    lo, hi = 0.01, 0.99
+    f = lambda x: SF_sph(m_, x) - SF_cyl(m_, x)
+    for _ in range(200):
+        mid = 0.5*(lo + hi)
+        lo, hi = (mid, hi) if f(lo)*f(mid) > 0 else (lo, mid)
+    return 0.5*(lo + hi)
+check("SM II act. 3: bisection gives a/b = 0.42 for mu = 10, 1000 and 1e4",
+      all(abs(bisect(m_) - xstar) < 1e-9 and round(bisect(m_), 2) == 0.42 for m_ in (10, 1e3, 1e4)))
+gu = np.linspace(-8, 8, 1601)
+UU, VV = np.meshgrid(gu, gu)
+Hu, Hv, mr, _ = sh.fields(UU, VV, 1000.0, 1.0, 2.0, 3)
+Hm = np.hypot(Hu, Hv)
+iH = np.unravel_index(Hm.argmax(), Hm.shape)
+rH, tH = np.hypot(UU[iH], VV[iH]), np.arctan2(abs(VV[iH]), abs(UU[iH]))
+H_pole_out = field_at(2.0*(1 + 1e-10), 0.0, 1000.0, 1.0, 2.0, 3)[0]
+ring = field_at(2.0*(1 + 1e-10), np.linspace(0, np.pi, 1801), 1000.0, 1.0, 2.0, 3)[0]
+check("SM II act. 1 and 4: |H| largest just outside the poles (about 3 H0); |B| outside the wall smallest near the equator",
+      rH < 2.02 and tH < 0.05 and round(H_pole_out) == 3 and abs(np.linspace(0, np.pi, 1801)[ring.argmin()] - np.pi/2) < 1e-3)
+
 print("\nALL CHECKS PASSED" if ok_all else "\nSOME CHECKS FAILED")

@@ -144,8 +144,8 @@ def harmonic_shielding_factor(mu_r, x, m, d):
     return 1 + m * s / (m + s) ** 2 * (1 - x ** (m + s)) * (mu_r - 1) ** 2 / mu_r
 
 
-def cloak_permeability(R1, R2, d):
-    """Permeability of a shell (radii R1 < R2) around a superconducting core
-    that leaves the external field undisturbed (Supplementary Material I,
-    section 7)."""
-    return ((d - 1) * R2 ** d + R1 ** d) / ((d - 1) * (R2 ** d - R1 ** d))
+def cloak_permeability(a, b, d):
+    """Permeability of a shell of outer radius b lined, at radius a, by a
+    superconducting layer, for which the field outside the shell equals the
+    applied field (magnetic cloak, Supplementary Material I, section 7)."""
+    return ((d - 1) * b ** d + a ** d) / ((d - 1) * (b ** d - a ** d))
