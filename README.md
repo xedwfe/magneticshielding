@@ -182,9 +182,11 @@ lines shown; corrected material annotations and reference to Hoburg (1995).
 
 ## Use of AI tools
 
-Parts of the code were refactored with the assistance of Claude (Anthropic).
-All code was reviewed and tested by the authors, who take full responsibility
-for it.
+During the preparation of this work the authors used Claude (Anthropic) to
+assist in refactoring the simulation code, in drafting and editing the text of
+the article and of its supplements, and in cross-checking algebraic results
+numerically. All derivations, code and results were reviewed, tested and
+verified by the authors, who take full responsibility for them.
 
 ## License
 
