@@ -1,8 +1,8 @@
 # Magnetic shielding by permeable shells: exact fields, interactive notebook and classroom activities
 
-Companion code to the article *Magnetic shielding as a motivational tool in
-teaching classical electromagnetic theory* (submitted to the European Journal
-of Physics).
+Companion code to the article *Magnetic shielding as a context for teaching
+magnetostatics in matter: spherical and cylindrical shells with open code*
+(submitted to the European Journal of Physics).
 
 The code computes and plots the exact static field of a permeable spherical
 shell and of an infinitely long cylindrical shell in a uniform applied field,
@@ -18,7 +18,7 @@ field `H0` (so that `B0 = mu0 H0` far away). The field inside the cavity is
 exactly uniform and parallel to `H0`, and the shielding factor
 `SF = H0/H_int` of both shells takes one form,
 
-    SF = 1 + [(d - 1)/d^2] * [1 - (a/b)^d] * (mu_r - 1)^2 / mu_r,
+    SF = 1 + C_d * (1 - k_d) * (mu_r - 1)^2 / mu_r,   C_d = (d - 1)/d^2,   k_d = (a/b)^d,
 
 with `d = 3` for the sphere and `d = 2` for the cylinder in a transverse field.
 The sphere is the better shield only for thin shells: the two shielding factors
@@ -49,7 +49,7 @@ all cells; it is self-contained.
 | `shielding.py` | The exact solution and derived quantities (single source of the physics). |
 | `paper_figures.py` | Regenerates every figure of the article and the code-generated figures of Supplementary Materials I and II as vector PDF. |
 | `explore_shielding.py` | Command-line exploration without Jupyter (field maps, tables, curves, crossing point). |
-| `verify_revision_claims.py` | Checks every quantitative statement of the article and of its supplements, and the consistency of the code (86 checks). |
+| `verify_revision_claims.py` | Checks every quantitative statement of the article and of its supplements, and the consistency of the code (96 checks). |
 | `verify_cavity_uniformity.py` | Independent check, by a finite-volume solution, that the cavity field is exactly uniform. |
 | `build_notebook.py` | Maintainer tool: rebuilds the notebook from `shielding.py`. |
 | `requirements.txt` | Python packages. |
@@ -92,24 +92,57 @@ Each command prints its numbers; the plotting commands also save a PNG file
 The first script checks the closed forms against direct solutions of the
 interface conditions, the crossing point, the limits and their reading in
 terms of demagnetizing factors, the shielding of higher harmonics, the cloaking
-condition, every number quoted in the article, the continuity of the
+condition, every number quoted in the article and in its supplements, the continuity of the
 tangential component of `H` and of the normal component of `B` for the plotted
 fields, and the agreement between `shielding.py`, an independent
-implementation and the notebook. The second solves the radial problem by finite
-volumes and shows that the cavity field is uniform to rounding error.
+implementation and the notebook. The second lists the determinants of the
+interface conditions for the harmonics absent from a uniform applied field
+(`l = 0, 2, 3, ...` for the sphere and `nu = 0, 2, 3, ...` for the cylinder),
+solves the radial problem by finite volumes and shows that the cavity field is
+uniform to rounding error.
+
+## Notation
+
+The notation is that of the article and its supplements. The shell has inner
+radius `a`, outer radius `b`, thickness `t = b - a` and relative permeability
+`mu_r`; its wall is the region `a < r < b`, where `r` is the distance from the
+centre of the sphere or from the axis of the cylinder (`rho` in the article).
+`H_int` is the strength of the uniform cavity field and `SF = H0/H_int` the
+shielding factor; `C_d = (d - 1)/d^2`, `k_d = (a/b)^d`, and `N = 1/d` is the
+demagnetizing factor of the corresponding solid body. The angle `theta` is
+measured from the direction of `H0`; the poles of each surface are its points
+with `theta = 0` and `theta = pi`, and its equator is formed by the points with
+`theta = pi/2`. The potentials in the cavity, in the shell and outside are
+`phi_in`, `phi_shell` and `phi_out`.
 
 ## Conventions and idealizations
 
-The sphere is shown in a meridian plane and the cylinder in its transverse
-plane, with the applied field pointing to the right. Field strengths are given
-in units of `H0` and flux densities in units of `mu0 H0`; the white curves of
-the maps are streamlines of `B`, whose spacing carries no information about the
-field strength. The model assumes a linear, isotropic and homogeneous material
+The sphere is shown in a meridional plane and the cylinder in its transverse
+plane, with the applied field pointing to the right. In the figures of the
+article (`paper_figures.py`, `explore_shielding.py`) this axis is labelled `z`
+for the sphere, its symmetry axis, and `x` for the cylinder; the notebook
+labels it `x` in both panels. Field strengths are given in units of `H0` and
+flux densities in units of `mu0 H0`; the white curves of the maps are
+streamlines of `B`, whose spacing carries no information about the field
+strength. The model assumes a linear, isotropic and homogeneous material
 with a field-independent permeability, a static uniform applied field, an infinitely long
 cylinder and closed shells without holes or seams; saturation, hysteresis,
 finite length and apertures are outside its scope.
 
 ## History
+
+**Version 3.2 (2026, notation aligned with the final text).**
+Article title updated. `shielding.py`, `paper_figures.py`, the notebook and this
+file use the notation of the article and its supplements: meridional plane,
+potentials `phi_in`, `phi_shell` and `phi_out`, the angle `theta` measured from
+`H0`, poles and equator, the wall `a < r < b`, and a superconducting layer of
+outer radius `a` in the magnetic cloak; `demagnetising_factor` is renamed
+`demagnetizing_factor` (the old name is kept as an alias). The dotted line of
+article figure 3(a) is labelled `SF = C_3(1 - k_3) mu_r`, as in its caption, and
+the box of the notebook maps writes `H_int` in roman type. `verify_revision_claims.py`
+covers the statements added in this revision (96 checks), including the
+harmonics `l = 0` of the sphere and `nu = 0` of the cylinder, which
+`verify_cavity_uniformity.py` now also lists.
 
 **Version 3.1 (2026, final revision of the article).**
 `verify_revision_claims.py` extended to every quantitative statement of the

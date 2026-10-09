@@ -1,8 +1,12 @@
 """
 paper_figures.py -- reproduces every figure of the revised manuscript
-"Magnetic shielding as a motivational tool in teaching classical
-electromagnetic theory" (EJP-110956) and of its Supplementary Materials I
-(figures 4 and 5) and II (figures 2 to 4).
+"Magnetic shielding as a context for teaching magnetostatics in matter:
+spherical and cylindrical shells with open code" (EJP-110956) and of its
+Supplementary Materials I (figures 4 and 5) and II (figures 2 to 4).
+
+Axis convention: in the figures of the article the axis along the applied
+field is labelled z for the sphere (its symmetry axis) and x for the
+cylinder, as in the text; the notebook labels it x in both panels.
 
 Offline: numpy + matplotlib only. All figures are written as vector PDF at
 their final printed width (446 pt = 6.2 in), so that fonts are legible at
@@ -115,7 +119,7 @@ def schematic(ax, geom, polar=False):
 def figure1():
     fig, axs = plt.subplots(1, 2, figsize=(TW, 2.55))
     schematic(axs[0], "sph"); schematic(axs[1], "cyl")
-    axs[0].set_title("(a) spherical shell (section through $z$)", pad=2)
+    axs[0].set_title("(a) spherical shell (meridional section)", pad=2)
     axs[1].set_title("(b) cylindrical shell (cross-section)", pad=2)
     fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.01, wspace=0.05)
     fig.savefig("fig1_geometry.pdf")
@@ -132,7 +136,7 @@ def figure2(mu=1000.0, a=1.0, b=2.0):
     fig, axs = plt.subplots(1, 2, figsize=(TW, 3.05), constrained_layout=True)
     im, _ = field_map(axs[0], "sph", mu, a, b, labels=("$z$ (m)", "$x$ (m)"))
     field_map(axs[1], "cyl", mu, a, b, labels=("$x$ (m)", "$y$ (m)"))
-    axs[0].set_title(r"(a) sphere, meridian plane", pad=3)
+    axs[0].set_title(r"(a) sphere, meridional plane", pad=3)
     axs[1].set_title(r"(b) cylinder, transverse plane", pad=3)
     cb = fig.colorbar(im, ax=axs, shrink=0.92, pad=0.01)
     cb.set_label(r"$|\vec B|/(\mu_0 H_0)$")
@@ -156,7 +160,7 @@ def figure3(a=1.0, b=2.0):
     ax.axhline(1, color="0.6", lw=0.7)
     ax.annotate("plateau, $SF\\approx 1$", xy=(1.7, 1.08), xytext=(1.15, 40),
                 fontsize=8.8, arrowprops=dict(arrowstyle="-", lw=0.6))
-    ax.annotate(r"$SF\simeq \frac{2}{9}(1-k_3)\,\mu_r$", xy=(4e3, 8.6e2),
+    ax.annotate(r"$SF\approx C_3(1-k_3)\,\mu_r$", xy=(4e3, 8.6e2),
                 xytext=(5e2, 12), fontsize=9,
                 arrowprops=dict(arrowstyle="-", lw=0.6))
     ax.set_xlim(1, 1e5); ax.set_ylim(0.8, 3e4)

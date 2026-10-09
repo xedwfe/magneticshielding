@@ -13,9 +13,12 @@ Two complementary numerical demonstrations:
 
 (A) Harmonic-uniqueness argument.
     The interior solution, regular at the origin, is a_l r^l P_l(cos th)
-    (sphere) or a_nu s^nu cos(nu th) (cylinder). A UNIFORM applied field
-    contains only the l = 1 (nu = 1) harmonic. For every other harmonic
-    the four boundary conditions form a HOMOGENEOUS 4x4 linear system; a
+    (sphere) or a_nu s^nu cos(nu th) (cylinder; s is the cylindrical
+    radius, rho in the article, and th is measured from the applied field).
+    A UNIFORM applied field contains only the l = 1 (nu = 1) harmonic. For
+    every other harmonic, l = 0, 2, 3, ... for the sphere and nu = 0, 2,
+    3, ... for the cylinder (nu = 0 with the solutions 1 and ln s), the
+    four boundary conditions form a HOMOGENEOUS 4x4 linear system; a
     nonzero determinant means that harmonic is not excited at all. The
     determinants below never vanish. Hence the cavity potential can only
     be  -H_int r cos(th):  a uniform field. Curvature of the interior
@@ -82,18 +85,30 @@ def det_sphere(l, mu_r, a, b):
     return np.linalg.det(M)
 
 
+def det_cylinder0(mu_r, a, b):
+    """nu = 0: cavity C, shell E + F ln s, outside D ln s."""
+    M = np.array([
+        [1.0, -1.0, -np.log(a),  0.0],          # phi continuous at a
+        [0.0,  0.0, -mu_r / a,   0.0],          # mu dphi/ds continuous at a
+        [0.0,  1.0,  np.log(b), -np.log(b)],    # phi continuous at b
+        [0.0,  0.0,  mu_r / b,  -1.0 / b],      # mu dphi/ds continuous at b
+    ])
+    M = M / np.abs(M).max(axis=1, keepdims=True)
+    return np.linalg.det(M)
+
+
 print(f"{'harmonic':>9s} {'|det| cylinder':>16s} {'|det| sphere':>16s}")
-for k in range(2, 7):
-    print(f"{k:>9d} {abs(det_cylinder(k, mu_r, a, b)):>16.4e} "
-          f"{abs(det_sphere(k, mu_r, a, b)):>16.4e}")
+for k in (0, 2, 3, 4, 5, 6):
+    dc = det_cylinder0(mu_r, a, b) if k == 0 else det_cylinder(k, mu_r, a, b)
+    print(f"{k:>9d} {abs(dc):>16.4e} {abs(det_sphere(k, mu_r, a, b)):>16.4e}")
 print("-> all determinants nonzero: only the uniform (l = nu = 1) harmonic")
 print("   is excited; the cavity field is EXACTLY uniform.\n")
 
 # =====================================================================
 # exact solution of the truncated problem (uniform Dirichlet at R_far)
 # unknowns u = (H_i, B2, C2, E3, D3):
-#   phi1 = -H_i s cos th ; phi2 = (B2 s + C2/s) cos th ;
-#   phi3 = (E3 s + D3/s) cos th ; phi3(R_far) = -H0 R_far cos th
+#   phi_in = -H_i s cos th ; phi_shell = (B2 s + C2/s) cos th ;
+#   phi_out = (E3 s + D3/s) cos th ; phi_out(R_far) = -H0 R_far cos th
 # =====================================================================
 M5 = np.array([
     [-a, -a, -1.0 / a, 0.0, 0.0],                    # phi continuous at a
@@ -185,5 +200,5 @@ print("PRECISION (~1e-13) at every resolution -- the computed cavity field")
 print("is uniform to rounding error, independent of h.")
 print("-> f(s) is a straight line through the origin inside the cavity:")
 print("   the interior field is UNIFORM and the streamlines are STRAIGHT.")
-print("   Curvature would require l > 1 harmonics, which (A) shows are")
-print("   not excited by a uniform applied field.")
+print("   Curvature would require harmonics other than l = nu = 1, which (A)")
+print("   shows are not excited by a uniform applied field.")

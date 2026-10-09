@@ -20,8 +20,8 @@ cells = [
 md(r"""
 # Magnetic shielding by permeable shells: interactive notebook
 
-Companion notebook to the article *Magnetic shielding as a motivational tool in
-teaching classical electromagnetic theory*.
+Companion notebook to the article *Magnetic shielding as a context for teaching
+magnetostatics in matter: spherical and cylindrical shells with open code*.
 
 It plots the **exact** static field of a permeable spherical shell and of an
 infinitely long cylindrical shell in a uniform applied field $H_0$, and lets you
@@ -39,10 +39,14 @@ the shielding factor $SF = H_0/H_{\rm int}$.
 
 **Model.** Linear, isotropic and homogeneous shell of relative permeability
 $\mu_r$, inner radius $a$, outer radius $b$, in vacuum; $\vec B = \mu_0\vec H$ in
-vacuum and $\vec B = \mu_0\mu_r\vec H$ in the shell. The sphere is shown in a
-meridian plane and the cylinder in its transverse plane; in both panels the
-applied field points to the right, and the in-plane coordinates are labelled
-$x$ and $y$.
+vacuum and $\vec B = \mu_0\mu_r\vec H$ in the shell, whose wall is the region
+$a<r<b$. The sphere is shown in a meridional plane and the cylinder in its
+transverse plane. In both panels the applied field points to the right, along
+the axis labelled $x$; for the sphere this axis is the symmetry axis, called $z$
+in the article and in its supplements. The angle $\theta$ is measured from the
+direction of the applied field: the poles of each surface are its points with
+$\theta = 0$ and $\theta = \pi$, and its equator is formed by the points with
+$\theta = \pi/2$.
 """),
 code(r"""
 import numpy as np
@@ -59,7 +63,7 @@ md(r"""
 Both shells are solved at once, with the dimension $d$ of the problem as a
 parameter ($d=3$ for the sphere, $d=2$ for the cylinder; Supplementary
 Material I). The shielding factor is
-$$SF = 1 + \frac{d-1}{d^2}\left[1-\left(\frac{a}{b}\right)^d\right]\frac{(\mu_r-1)^2}{\mu_r}.$$
+$$SF = 1 + C_d\,(1-k_d)\,\frac{(\mu_r-1)^2}{\mu_r},\qquad C_d = \frac{d-1}{d^2},\qquad k_d = \left(\frac{a}{b}\right)^d.$$
 The next cell is identical to the core of `shielding.py` in the repository.
 """),
 code(core),
@@ -80,7 +84,7 @@ def draw_maps(mu_r=1000.0, ratio=0.5, H0=1.0, b=2.0, L=4.0, N=350, quantity="B")
     g = np.linspace(-L, L, int(N))
     U, V = np.meshgrid(g, g)
     fig, axs = plt.subplots(1, 2, figsize=(13, 5.4))
-    panels = ((axs[0], 3, "Spherical shell (meridian plane)"),
+    panels = ((axs[0], 3, "Spherical shell (meridional plane)"),
               (axs[1], 2, "Cylindrical shell (transverse plane)"))
     for ax, d, name in panels:
         Hu, Hv, mu_map, SF = fields(U, V, mu_r, a, b, d, H0)
@@ -95,7 +99,7 @@ def draw_maps(mu_r=1000.0, ratio=0.5, H0=1.0, b=2.0, L=4.0, N=350, quantity="B")
         ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")
         ax.set_xlabel("x (m)"); ax.set_ylabel("y (m)")
         ax.set_title(f"{name},  $\\mu_r = {mu_r:.4g}$")
-        ax.text(0.02, 0.97, f"$H_{{int}}/H_0 = {1/SF:.2e}$\n$SF = {SF:.1f}$",
+        ax.text(0.02, 0.97, f"$H_{{\\rm int}}/H_0 = {1/SF:.2e}$\n$SF = {SF:.1f}$",
                 transform=ax.transAxes, va="top",
                 bbox=dict(boxstyle="round", fc="white", alpha=0.9))
         cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
@@ -216,9 +220,10 @@ md(r"""
    and check that the shielding factor is unchanged under $\mu_r \to 1/\mu_r$.
    Interpret the limit $\mu_r \to 0$ (Supplementary Material I, section 6).
 3. Verify numerically the cloaking condition of Supplementary Material I,
-   section 7: for a superconducting layer of radius $a$ lining a shell of outer
-   radius $b$ with $\mu_r = [(d-1)b^d + a^d]/[(d-1)(b^d - a^d)]$, the field
-   outside the shell equals the applied field.
+   section 7 (exercise 2): for a superconducting layer of outer radius $a$
+   lining a shell of outer radius $b$ and relative permeability
+   $\mu_r = [(d-1)b^d + a^d]/[(d-1)(b^d - a^d)]$, the field outside the shell
+   equals the applied field.
 4. Add a second concentric shell; this requires solving a larger linear system
    with the same interface conditions.
 """),

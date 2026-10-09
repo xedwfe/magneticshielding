@@ -52,8 +52,18 @@ check("higher harmonics shielded progressively better",
 def det_c(m, x, n): return (m+1)**2 - (m-1)**2*x**(2*n)
 def det_s(m, x, l): return (l*m+l+1)*((l+1)*m+l) - l*(l+1)*(m-1)**2*x**(2*l+1)
 grid = [(m, x, n) for m in np.logspace(-4, 6, 60) for x in np.linspace(0.001, 0.999, 60) for n in range(1, 9)]
+grid0 = [(m, x, n) for m in np.logspace(-4, 6, 60) for x in np.linspace(0.001, 0.999, 60) for n in range(0, 9)]
 check("cyl determinant > 0 for all mu>0, 0<a<b, nu>=1", min(det_c(*g) for g in grid) > 0)
-check("sph determinant > 0 for all mu>0, 0<a<b, l>=1", min(det_s(*g) for g in grid) > 0)
+check("sph determinant > 0 for all mu>0, 0<a<b, l>=0", min(det_s(*g) for g in grid0) > 0)
+# cylinder, nu = 0: potentials C (cavity), E + F ln(rho) (shell), D ln(rho) (outside)
+def det_c0(m, a, b):
+    M = np.array([[1.0, -1.0, -np.log(a), 0.0],          # phi continuous at a
+                  [0.0, 0.0, -m/a, 0.0],                  # mu dphi/drho at a (cavity term is 0)
+                  [0.0, 1.0, np.log(b), -np.log(b)],      # phi continuous at b
+                  [0.0, 0.0, m/b, -1.0/b]])               # mu dphi/drho at b
+    return np.linalg.det(M)
+check("cyl, nu = 0 (1 and ln rho): homogeneous system has only the trivial solution",
+      min(abs(det_c0(m, x, 1.0)) for m in np.logspace(-4, 6, 40) for x in np.linspace(0.01, 0.99, 40)) > 0)
 
 # 4. geometry comparison
 xstar = (1+np.sqrt(33))/16
@@ -70,7 +80,7 @@ print(f"      a/b=0.30, mu=1000: SF_sph={SF_sph(1000,.3):.1f}  SF_cyl={SF_cyl(10
 print(f"      a/b=0.50, mu=1000: SF_sph={SF_sph(1000,.5):.2f} SF_cyl={SF_cyl(1000,.5):.2f} ratio={SF_sph(1000,.5)/SF_cyl(1000,.5):.3f}")
 print(f"      a/b=0.80, mu=1000: SF_sph={SF_sph(1000,.8):.1f}  SF_cyl={SF_cyl(1000,.8):.1f}")
 
-# 5. demagnetising-factor reading, N = 1/d
+# 5. demagnetizing-factor reading, N = 1/d
 for d, f in [(3, SF_sph), (2, SF_cyl)]:
     N = 1/d; m = 1e7
     check(f"thin-shell: (SF-1)/(mu t/b) -> 1-N, d={d}", np.isclose((f(m, 1-1e-5)-1)/(m*1e-5), 1-N, rtol=1e-3))
@@ -139,7 +149,7 @@ for m_ in (0.05, 1.0, 4.0, 300.0):
                 ok11 &= det >= m_*(mm+s)**2*(1-1e-12)
 check("S_m = 1 + ms/(m+s)^2 (1-x^(m+s))(mu-1)^2/mu and Det >= mu (m+s)^2 b^(m+s)", ok11)
 
-# 12. exact small-cavity limit from demagnetising factors, N = 1/d
+# 12. exact small-cavity limit from demagnetizing factors, N = 1/d
 for d in (2, 3):
     N = 1/d; mus = np.logspace(-2, 4, 50)
     check(f"SF(a->0) = [1+N(mu-1)][1+(1-N)(mu-1)]/mu exactly, d={d}",
@@ -241,8 +251,9 @@ hint = [100/SF_sph(m, .5) for m in (10, 100, 1000)]
 check("2.3: cavity field 39%, 5.0%, 0.51% of H0 and SF ~ 2.6, 20, 195 (mu = 10, 100, 1000)",
       round(hint[0]) == 39 and round(hint[1], 1) == 5.0 and round(hint[2], 2) == 0.51
       and round(SF_sph(10, .5), 1) == 2.6 and round(SF_sph(100, .5)) == 20 and round(SF_sph(1000, .5)) == 195)
-check("2.3: crossover mu* = 1/[C_d(1-k_d)] is about 5 for a/b = 1/2 (both shells)",
-      round(9/(2*(1 - .125))) == 5 and round(4/(1 - .25)) == 5)
+check("2.3: crossover mu* = 1/[C_d(1-k_d)] = 36/7 ~ 5.1 (sphere) and 16/3 ~ 5.3 (cylinder) for a/b = 1/2",
+      np.isclose(9/(2*(1 - .125)), 36/7) and np.isclose(4/(1 - .25), 16/3)
+      and round(36/7, 1) == 5.1 and round(16/3, 1) == 5.3)
 
 # 19. section 2.4: geometry comparison
 xg = np.linspace(1e-4, 1 - 1e-4, 4001)
@@ -369,9 +380,9 @@ for d in (2, 3):
 check("SM I s7, exercise 2: Q = -P a^d/(d-1) and cloak permeability [(d-1)b^d+a^d]/[(d-1)(b^d-a^d)]", ok24b)
 
 # 25. Supplementary Material II, activities 1-4
-check("SM II act. 2: SF = 2.6, 20.1, 195.1 (fig. 2) and '+1' formula 2.94 vs exact 2.57 at mu=10",
+check("SM II act. 2: SF = 2.6, 20.1, 195.1 (fig. 2) and '+1' formula 2.944 vs exact 2.575 at mu=10",
       round(SF_sph(10, .5), 1) == 2.6 and round(SF_sph(100, .5), 1) == 20.1 and round(SF_sph(1000, .5), 1) == 195.1
-      and round(A*10 + 1, 2) == 2.94 and round(SF_sph(10, .5), 2) == 2.57)
+      and round(A*10 + 1, 3) == 2.944 and np.isclose(SF_sph(10, .5), 2.575, rtol=0, atol=1e-12))
 check("SM II act. 3: 109.2 vs 90.8 (a/b = 0.8) and 216.8 vs 228.0 (a/b = 0.3) at mu = 1000",
       round(SF_sph(1000, .8), 1) == 109.2 and round(SF_cyl(1000, .8), 1) == 90.8
       and round(SF_sph(1000, .3), 1) == 216.8 and round(SF_cyl(1000, .3), 1) == 228.0)
@@ -394,5 +405,95 @@ H_pole_out = field_at(2.0*(1 + 1e-10), 0.0, 1000.0, 1.0, 2.0, 3)[0]
 ring = field_at(2.0*(1 + 1e-10), np.linspace(0, np.pi, 1801), 1000.0, 1.0, 2.0, 3)[0]
 check("SM II act. 1 and 4: |H| largest just outside the poles (about 3 H0); |B| outside the wall smallest near the equator",
       rH < 2.02 and tH < 0.05 and round(H_pole_out) == 3 and abs(np.linspace(0, np.pi, 1801)[ring.argmin()] - np.pi/2) < 1e-3)
+
+
+# ============================================================================
+# 26-33. Statements added in the notation revision (version 3.2): numbers now
+#        quoted for both geometries, and the remaining claims of SM I and II.
+# ============================================================================
+def polar(rr, tt, mu, a, b, d):
+    """|H| and the permeability map on a polar grid (r, theta), theta from H0."""
+    Hm_, mr_, _ = field_at(rr, tt, mu, a, b, d)
+    return Hm_, mr_
+
+# 26. SM II act. 1 and main text section 3: values for both geometries (mu_r = 1000, a/b = 1/2)
+ok26 = True
+for d, Bmax_txt, Bmin_txt in ((3, 5.1, 3.6), (2, 5.3, 3.3)):
+    a_, b_, mu_ = 1.0, 2.0, 1000.0
+    Hint_ = 1/SFd(mu_, .5, d)
+    ok26 &= round(mu_*Hint_, 1) == Bmax_txt                                   # max |B| in the wall
+    rr, tt = np.meshgrid(np.linspace(b_*(1 + 1e-12), 4*b_, 601), np.linspace(0, np.pi, 721))
+    Ho, mro = polar(rr, tt, mu_, a_, b_, d)
+    j = np.unravel_index(Ho.argmin(), Ho.shape)
+    _, _, _, R_ = sh.first_harmonic_coefficients(mu_, a_, b_, d)
+    ok26 &= np.isclose(rr[j], b_*(1 + 1e-12)) and np.isclose(tt[j], np.pi/2)   # just outside the equator
+    ok26 &= np.isclose(Ho.min(), 1 - R_*b_**-d) and round(1e3*Ho.min(), 1) == Bmin_txt
+check("SM II act. 1 / main text 3: max |B| in wall 5.1 and 5.3 mu0H0; min |B| outside 3.6e-3 and 3.3e-3 mu0H0 at the equator", ok26)
+
+# 27. SM II act. 4: |H| in the wall never exceeds H_int, reached at the inner equator;
+#     |B| in the wall at the outer pole equals |B| just outside, about 3 mu0H0 (sphere)
+a_, b_, mu_ = 1.0, 2.0, 1000.0
+rr, tt = np.meshgrid(np.linspace(a_*(1 + 1e-12), b_*(1 - 1e-12), 401), np.linspace(0, np.pi, 721))
+Hw, mrw = polar(rr, tt, mu_, a_, b_, 3)
+Hint3, P3, Q3, R3 = sh.first_harmonic_coefficients(mu_, a_, b_, 3)
+k_ = np.unravel_index(Hw.argmax(), Hw.shape)
+check("SM II act. 4: max |H| in the wall = H_int ~ 5e-3 H0, on the inner surface at the equator",
+      np.isclose(Hw.max(), Hint3, rtol=1e-9) and np.isclose(rr[k_], a_) and np.isclose(tt[k_], np.pi/2)
+      and round(1e3*Hint3) == 5)
+B_wall_pole = mu_*(P3 + 2*Q3*b_**-3)
+check("SM II act. 4: |B| in the wall at the outer pole = |B| just outside, about 3 mu0H0",
+      np.isclose(B_wall_pole, 1 + 2*R3*b_**-3) and round(B_wall_pole) == 3)
+
+# 28. SM I section 2: weakly magnetic substances, |chi_m| ~ 1e-5, give negligible shielding
+check("SM I s2: |chi_m| ~ 1e-5 gives SF - 1 < 1e-10 (SF - 1 of order chi_m^2)",
+      max(SFd(1 + c, x, d) - 1 for c in (1e-5, -1e-5) for d in (2, 3) for x in (1e-6, 0.5)) < 1e-10)
+
+# 29. SM I section 4: Delta_d > 0, so H_int has the sign of H0 and SF >= 1 (= 1 only at mu_r = 1);
+#     the exterior dipole (moment 2 pi R per unit length, or 4 pi R) has the sign of mu_r - 1
+ok29 = True
+for d in (2, 3):
+    for m_ in np.logspace(-4, 6, 41):
+        for x in (0.05, 0.5, 0.95):
+            hint_, P_, Q_, R_ = sh.first_harmonic_coefficients(m_, x, 1.0, d)
+            ok29 &= hint_ > 0 and SFd(m_, x, d) >= 1 and (np.sign(R_) == np.sign(m_ - 1))
+ok29 &= np.isclose(SFd(1.0, 0.5, 3), 1.0) and np.isclose(SFd(1.0, 0.5, 2), 1.0)
+check("SM I s4: H_int > 0, SF >= 1 (equality at mu_r = 1), dipole moment along H0 iff mu_r > 1", ok29)
+
+# 30. SM I section 5: cavity coefficient A = -mu_r (m+s)^2 b^(m+s) G / D_m (same sign as -G)
+def cavity_coeff(mu, a, b, n, d):
+    """Signed cavity coefficient for an applied term -G r^n (G = 1), from the 4x4 system."""
+    s = n + d - 2
+    M = np.array([[a**n, -a**n, -a**-s, 0],
+                  [n*a**n, -mu*n*a**n, mu*s*a**-s, 0],
+                  [0, b**n, b**-s, -b**-s],
+                  [0, mu*n*b**n, -mu*s*b**-s, s*b**-s]], float)
+    rhs = np.array([0, 0, -b**n, -n*b**n], float)
+    return np.linalg.solve(M, rhs)[0]
+ok30 = True
+for d in (2, 3):
+    for m_ in (0.2, 3.0, 1000.0):
+        for x in (0.3, 0.7):
+            for n in (1, 2, 3):
+                s = n + d - 2
+                Dm = (n + m_*s)*(s + m_*n) - n*s*(m_ - 1)**2*x**(n + s)      # b = 1
+                ok30 &= np.isclose(cavity_coeff(m_, x, 1.0, n, d), -m_*(n + s)**2/Dm)
+check("SM I s5: cavity coefficient A = -mu_r (m+s)^2 b^(m+s) G / D_m, so S_m = -G/A", ok30)
+
+# 31. SM I section 7, exercise 1: P and Q tend to finite limits as mu_r -> 0
+ok31 = True
+for d in (2, 3):
+    for x in (0.3, 0.6):
+        hint_, P_, Q_, R_ = sh.first_harmonic_coefficients(1e-12, x, 1.0, d)
+        ok31 &= np.isclose(P_, d/((d - 1)*(1 - x**d)), rtol=1e-9)
+        ok31 &= np.isclose(Q_, d*x**d/((d - 1)*(1 - x**d)), rtol=1e-9)
+check("SM I s7, exercise 1: P -> d/[(d-1)(1-k_d)] and Q -> d a^d/[(d-1)(1-k_d)] as mu_r -> 0", ok31)
+
+# 32. main text 2.4: x* to four decimals
+check("2.4: x* = 0.4215 to four decimals", round(xstar, 4) == 0.4215)
+
+# 33. helper names of shielding.py (version 3.2)
+check("shielding.py: demagnetizing_factor gives N = 1/d (old name kept as an alias)",
+      sh.demagnetizing_factor(3) == 1/3 and sh.demagnetizing_factor(2) == 1/2
+      and sh.demagnetising_factor is sh.demagnetizing_factor)
 
 print("\nALL CHECKS PASSED" if ok_all else "\nSOME CHECKS FAILED")

@@ -3,8 +3,9 @@ shielding.py
 ============
 Exact static field of a permeable spherical shell and of an infinitely
 long cylindrical shell in a uniform applied field, and the quantities
-derived from it in the article "Magnetic shielding as a motivational tool
-in teaching classical electromagnetic theory".
+derived from it in the article "Magnetic shielding as a context for
+teaching magnetostatics in matter: spherical and cylindrical shells with
+open code".
 
 This module is the single source of the physics used by paper_figures.py
 and explore_shielding.py. The interactive notebook carries an identical
@@ -19,11 +20,15 @@ Model and conventions (as in the article)
   inner radius a and outer radius b, in vacuum, in a static uniform
   applied field H0; far from the shell B0 = mu0*H0.
 * B = mu0*H in the cavity and outside the shell, B = mu0*mu_r*H in the
-  shell.
+  shell; the wall of the shell is the region a < r < b.
 * d = 3: spherical shell, applied field along z; fields are evaluated in a
-  meridian plane, with in-plane coordinates (u, v) = (z, x).
+  meridional plane, with in-plane coordinates (u, v) = (z, x).
   d = 2: infinitely long cylindrical shell with axis z, applied field
   along x; fields are evaluated in the transverse plane, (u, v) = (x, y).
+* r is the distance from the centre of the sphere or from the axis of the
+  cylinder (rho in the article), and theta is measured from the direction
+  of the applied field; the poles of a surface are its points with
+  theta = 0 and pi, its equator the points with theta = pi/2.
 * Field strengths are returned in units of H0 when H0 = 1 (the default).
 
 Offline: depends only on numpy.
@@ -34,11 +39,11 @@ import numpy as np
 def first_harmonic_coefficients(mu_r, a, b, d, H0=1.0):
     """Coefficients of the exact solution (Supplementary Material I, section 4).
 
-    Potentials, with r the distance to the centre and t the angle to the
-    applied field:
-        cavity   phi1 = -H_int * r * cos(t)
-        shell    phi2 = (-P * r + Q * r**(1 - d)) * cos(t)
-        outside  phi3 = (-H0 * r + R * r**(1 - d)) * cos(t)
+    Potentials, with r the radial coordinate and t the angle theta measured
+    from the applied field:
+        cavity   phi_in    = -H_int * r * cos(t)
+        shell    phi_shell = (-P * r + Q * r**(1 - d)) * cos(t)
+        outside  phi_out   = (-H0 * r + R * r**(1 - d)) * cos(t)
     Returns (H_int, P, Q, R).
     """
     x = a / b
@@ -79,7 +84,7 @@ def fields(U, V, mu_r, a, b, d, H0=1.0):
 
 
 def fields_sphere(Z, X, mu_r, a, b, H0=1.0):
-    """Spherical shell, meridian plane: returns (Hz, Hx, mu_map, SF)."""
+    """Spherical shell, meridional plane: returns (Hz, Hx, mu_map, SF)."""
     return fields(Z, X, mu_r, a, b, 3, H0)
 
 
@@ -109,7 +114,8 @@ def SF_cyl(mu_r, x):
 
 
 def three_term_coefficients(x, d):
-    """SF = A*mu_r + B + C/mu_r (article equation (4)); returns (A, B, C)."""
+    """SF = A*mu_r + B + C/mu_r (article equation (4)); returns (A, B, C),
+    with A = C = C_d*(1 - k_d), B = 1 - 2A, C_d = (d-1)/d^2, k_d = x^d."""
     A = (d - 1) / d ** 2 * (1 - x ** d)
     return A, 1 - 2 * A, A
 
@@ -122,7 +128,9 @@ def plus_one_approximation(mu_r, x, d):
 
 
 def regime_crossover(x, d):
-    """Permeability near which the plateau SF ~ 1 gives way to SF ~ mu_r."""
+    """Permeability near which the plateau SF ~ 1 gives way to SF ~ mu_r,
+    mu_r* = 1/[C_d (1 - k_d)] (36/7 for the sphere and 16/3 for the
+    cylinder when x = 1/2)."""
     return d ** 2 / ((d - 1) * (1 - x ** d))
 
 
@@ -131,21 +139,29 @@ def ratio_envelope(x):
     return 8 / 9 * (1 + x + x ** 2) / (1 + x)
 
 
-def demagnetising_factor(d):
-    """N = 1/3 for a sphere (d = 3), 1/2 for a long cylinder in a
-    transverse field (d = 2)."""
+def demagnetizing_factor(d):
+    """Demagnetizing factor N = 1/d of the corresponding solid body:
+    1/3 for a sphere (d = 3), 1/2 for a long cylinder in a transverse
+    field (d = 2). C_d = (d-1)/d^2 = N(1 - N)."""
     return 1.0 / d
 
 
+demagnetising_factor = demagnetizing_factor   # former name, kept for compatibility
+
+
 def harmonic_shielding_factor(mu_r, x, m, d):
-    """Shielding factor of an applied harmonic of order m (Supplementary
-    Material I, section 5); m = 1 is the uniform field."""
+    """Shielding factor S_m of an applied harmonic of order m
+    (Supplementary Material I, section 5): the ratio of its coefficient in
+    the applied potential to its coefficient in the cavity, with
+    s = m + d - 2. m = 1 is the uniform field; the formula holds for
+    m >= 1 (cylinder) and m >= 0 (sphere)."""
     s = m + d - 2
     return 1 + m * s / (m + s) ** 2 * (1 - x ** (m + s)) * (mu_r - 1) ** 2 / mu_r
 
 
 def cloak_permeability(a, b, d):
-    """Permeability of a shell of outer radius b lined, at radius a, by a
-    superconducting layer, for which the field outside the shell equals the
-    applied field (magnetic cloak, Supplementary Material I, section 7)."""
+    """Relative permeability of a shell of outer radius b, lined by a
+    superconducting layer of outer radius a, for which the field outside
+    the shell equals the applied field (magnetic cloak, Supplementary
+    Material I, section 7, exercise 2)."""
     return ((d - 1) * b ** d + a ** d) / ((d - 1) * (b ** d - a ** d))
