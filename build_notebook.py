@@ -79,6 +79,13 @@ does, through saturation).
 code(r"""
 NORM = LogNorm(vmin=1e-3, vmax=6.0)
 
+def sci(v):
+    # number for the text boxes: plain if moderate, otherwise m x 10^e
+    e = int(np.floor(np.log10(abs(v))))
+    if -2 < e < 3:
+        return f"{v:.3g}"
+    return f"{v / 10**e:.2f}\\times10^{{{e}}}"
+
 def draw_maps(mu_r=1000.0, ratio=0.5, H0=1.0, b=2.0, L=4.0, N=350, quantity="B"):
     a = ratio * b
     g = np.linspace(-L, L, int(N))
@@ -99,7 +106,7 @@ def draw_maps(mu_r=1000.0, ratio=0.5, H0=1.0, b=2.0, L=4.0, N=350, quantity="B")
         ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")
         ax.set_xlabel("x (m)"); ax.set_ylabel("y (m)")
         ax.set_title(f"{name},  $\\mu_r = {mu_r:.4g}$")
-        ax.text(0.02, 0.97, f"$H_{{\\rm int}}/H_0 = {1/SF:.2e}$\n$SF = {SF:.1f}$",
+        ax.text(0.02, 0.97, f"$H_{{\\rm int}}/H_0 = {sci(1/SF)}$\n$SF = {SF:.1f}$",
                 transform=ax.transAxes, va="top",
                 bbox=dict(boxstyle="round", fc="white", alpha=0.9))
         cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)

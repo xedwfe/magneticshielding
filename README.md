@@ -7,8 +7,9 @@ magnetostatics in matter: spherical and cylindrical shells with open code*
 The code computes and plots the exact static field of a permeable spherical
 shell and of an infinitely long cylindrical shell in a uniform applied field,
 treats both geometries in a single calculation, and reproduces every figure of
-the article and of its Supplementary Material II. All scripts run offline and
-depend only on `numpy` and `matplotlib` (plus `ipywidgets` for the notebook).
+the article and the code-generated figures of its two supplements. All scripts
+run offline and depend only on `numpy` and `matplotlib` (plus `ipywidgets` for
+the notebook). The code is released under the MIT License (see `LICENSE`).
 
 ## The physics in one paragraph
 
@@ -53,6 +54,7 @@ all cells; it is self-contained.
 | `verify_cavity_uniformity.py` | Independent check, by a finite-volume solution, that the cavity field is exactly uniform. |
 | `build_notebook.py` | Maintainer tool: rebuilds the notebook from `shielding.py`. |
 | `requirements.txt` | Python packages. |
+| `LICENSE` | MIT License. |
 
 ## Reproducing the figures
 
@@ -71,6 +73,11 @@ all cells; it is self-contained.
 
 Figure 1 of Supplementary Material II is a screenshot of the notebook, and
 figures 1 to 3 of Supplementary Material I are hand-drawn illustrations.
+
+The figures of the article were produced with Python 3.13, `numpy` 2.5 and
+`matplotlib` 3.11. Other versions give the same fields and the same numbers,
+but the placement of the streamlines, which carries no physical information,
+may differ slightly between versions of `matplotlib`.
 
 ## Exploring without Jupyter
 
@@ -131,6 +138,12 @@ finite length and apertures are outside its scope.
 
 ## History
 
+**Version 3.3 (2026, submitted revision).**
+`LICENSE` (MIT) and `.gitignore` added. The boxes of the notebook maps write
+`H_int/H0` in scientific notation (for example 5.13 x 10^-3), as in the figure
+of Supplementary Material II that shows the notebook. This file states the
+software versions used for the figures of the article.
+
 **Version 3.2 (2026, notation aligned with the final text).**
 Article title updated. `shielding.py`, `paper_figures.py`, the notebook and this
 file use the notation of the article and its supplements: meridional plane,
@@ -172,6 +185,10 @@ lines shown; corrected material annotations and reference to Hoburg (1995).
 Parts of the code were refactored with the assistance of Claude (Anthropic).
 All code was reviewed and tested by the authors, who take full responsibility
 for it.
+
+## License
+
+MIT License; see `LICENSE`.
 
 ## Citation
 
