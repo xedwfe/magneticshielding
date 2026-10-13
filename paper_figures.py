@@ -67,6 +67,28 @@ def field_map(ax, geom, mu, a, b, L=4.0, quantity="B", annotate=True,
     return im, SF
 
 
+def colorbar_like_panels(fig, im, axs, label, **kw):
+    """Colour bar to the right of the panels, exactly as tall as the maps.
+
+    Constrained layout first places the panels and reserves room for the
+    bar. Because the maps have an equal aspect ratio, their boxes are shorter
+    than the space that the layout gives them, so the layout is then frozen
+    and the bar is resized to run from the bottom of the lowest map to the
+    top of the highest one."""
+    cb = fig.colorbar(im, ax=axs, **kw)
+    cb.set_label(label)
+    fig.canvas.draw()                          # run the layout and the aspect
+    try:
+        fig.set_layout_engine("none")          # matplotlib >= 3.6
+    except AttributeError:
+        fig.set_constrained_layout(False)
+    boxes = [ax.get_position() for ax in np.ravel(axs)]
+    y0, y1 = min(b.y0 for b in boxes), max(b.y1 for b in boxes)
+    p = cb.ax.get_position()
+    cb.ax.set_position([p.x0, y0, p.width, y1 - y0])
+    return cb
+
+
 # ------------------------------------------------- figure 1: schematics
 def schematic(ax, geom, polar=False):
     """Shell geometry; polar=True adds the polar coordinates used in SM I."""
@@ -138,8 +160,7 @@ def figure2(mu=1000.0, a=1.0, b=2.0):
     field_map(axs[1], "cyl", mu, a, b, labels=("$x$ (m)", "$y$ (m)"))
     axs[0].set_title(r"(a) sphere, meridional plane", pad=3)
     axs[1].set_title(r"(b) cylinder, transverse plane", pad=3)
-    cb = fig.colorbar(im, ax=axs, shrink=0.92, pad=0.01)
-    cb.set_label(r"$|\vec B|/(\mu_0 H_0)$")
+    colorbar_like_panels(fig, im, axs, r"$|\vec B|/(\mu_0 H_0)$", pad=0.01)
     fig.savefig("fig2_field_maps.pdf", dpi=300)
     plt.close(fig)
 
@@ -216,8 +237,7 @@ def sm2_mu_sweep(a=1.0, b=2.0):
         im, SF = field_map(ax, "sph", mu, a, b, annotate=False, density=0.8,
                            labels=("$z$ (m)", "$x$ (m)" if mu == 10 else ""))
         ax.set_title(rf"$\mu_r = {mu}$:  $SF = {SF:.1f}$", pad=3)
-    cb = fig.colorbar(im, ax=axs, shrink=0.95, pad=0.01)
-    cb.set_label(r"$|\vec B|/(\mu_0 H_0)$")
+    colorbar_like_panels(fig, im, axs, r"$|\vec B|/(\mu_0 H_0)$", pad=0.01)
     fig.savefig("sm2_fig2_mu_sweep.pdf", dpi=300)
     plt.close(fig)
 
@@ -233,8 +253,7 @@ def sm2_geometry(mu=1000.0, b=2.0):
                                    ("$x$ (m)" if geom == "sph" else "$y$ (m)")))
             name = "sphere" if geom == "sph" else "cylinder"
             ax.set_title(rf"{name}, $a/b = {x}$:  $SF = {SF:.1f}$", pad=3)
-    cb = fig.colorbar(im, ax=axs, shrink=0.6, pad=0.01)
-    cb.set_label(r"$|\vec B|/(\mu_0 H_0)$")
+    colorbar_like_panels(fig, im, axs, r"$|\vec B|/(\mu_0 H_0)$", pad=0.01)
     fig.savefig("sm2_fig3_geometry.pdf", dpi=300)
     plt.close(fig)
 
@@ -247,8 +266,7 @@ def sm2_B_vs_H(mu=1000.0, a=1.0, b=2.0):
               labels=("$z$ (m)", ""))
     axs[0].set_title(r"(a) $|\vec B|/(\mu_0H_0)$", pad=3)
     axs[1].set_title(r"(b) $|\vec H|/H_0$", pad=3)
-    cb = fig.colorbar(im, ax=axs, shrink=0.92, pad=0.01)
-    cb.set_label("field magnitude (normalized)")
+    colorbar_like_panels(fig, im, axs, "field magnitude (normalized)", pad=0.01)
     fig.savefig("sm2_fig4_B_vs_H.pdf", dpi=300)
     plt.close(fig)
 

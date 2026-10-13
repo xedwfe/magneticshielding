@@ -138,6 +138,11 @@ finite length and apertures are outside its scope.
 
 ## History
 
+**Version 3.4 (2026, resubmitted revision).**
+The colour bars of the field maps (figure 2 of the article and figures 2 to 4
+of Supplementary Material II) now span exactly the height of the maps. The
+archived copy of the repository on Zenodo is cited below.
+
 **Version 3.3 (2026, submitted revision).**
 `LICENSE` (MIT) and `.gitignore` added. The boxes of the notebook maps write
 `H_int/H0` in scientific notation (for example 5.13 x 10^-3), as in the figure
@@ -195,4 +200,5 @@ MIT License; see `LICENSE`.
 ## Citation
 
 If you use this code, please cite the article (reference to be added upon
-publication) and the archived version of this repository (DOI to be added).
+publication) and the archived copy of this repository on Zenodo,
+https://doi.org/10.5281/zenodo.23270080.
