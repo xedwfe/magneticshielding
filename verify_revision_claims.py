@@ -1,6 +1,7 @@
-"""Offline numerical verification of every quantitative statement made in the
-revised manuscript EJP-110956 and its supplements, and of the consistency of
-the repository code (shielding.py, paper_figures.py and the notebook).
+"""Offline numerical verification of every number of the revised manuscript
+EJP-110956 and of its supplements that follows from the model, and of the
+consistency of the repository code (shielding.py, paper_figures.py and the
+notebook).
 Run from the repository folder:  python verify_revision_claims.py
 No network access is used."""
 import numpy as np
@@ -183,7 +184,8 @@ check("plotted fields: tangential H and normal B continuous at r=a,b; H -> H0 fa
 #     geometry-specific implementation written from the classical formulas
 import shielding as sh
 def ref_sphere(Z, X, mu, a, b):
-    r = np.hypot(Z, X); r = np.where(r < 1e-12, 1e-12, r); c, s = Z/r, X/r
+    r = np.hypot(Z, X); o = r < 1e-12; r = np.where(o, 1e-12, r)
+    c, s = np.where(o, 1.0, Z/r), np.where(o, 0.0, X/r)   # centre: any direction, take theta = 0
     k = (a/b)**3; den = (mu+2)*(2*mu+1) - 2*k*(mu-1)**2
     Hint = 9*mu/den; A = 3*(2*mu+1)/den; B = 3*(mu-1)*a**3/den
     C = b**3*(mu-1)*(2*mu+1)*(1-k)/den
@@ -191,7 +193,8 @@ def ref_sphere(Z, X, mu, a, b):
     Ht = np.where(r < a, -Hint*s, np.where(r <= b, -(A+B/r**3)*s, -(1-C/r**3)*s))
     return Hr*c - Ht*s, Hr*s + Ht*c, np.where((r >= a) & (r <= b), mu, 1.0), 1/Hint
 def ref_cylinder(X, Y, mu, a, b):
-    r = np.hypot(X, Y); r = np.where(r < 1e-12, 1e-12, r); c, s = X/r, Y/r
+    r = np.hypot(X, Y); o = r < 1e-12; r = np.where(o, 1e-12, r)
+    c, s = np.where(o, 1.0, X/r), np.where(o, 0.0, Y/r)
     D = (mu+1)**2*b**2 - (mu-1)**2*a**2; Hint = 4*mu*b**2/D
     E1 = -2*(mu+1)*b**2/D; F1 = -2*(mu-1)*a**2*b**2/D; D1 = (mu**2-1)*(b**2-a**2)*b**2/D
     Hr = np.where(r < a, Hint*c, np.where(r <= b, -(E1-F1/r**2)*c, (1+D1/r**2)*c))
@@ -495,5 +498,90 @@ check("2.4: x* = 0.4215 to four decimals", round(xstar, 4) == 0.4215)
 check("shielding.py: demagnetizing_factor gives N = 1/d (old name kept as an alias)",
       sh.demagnetizing_factor(3) == 1/3 and sh.demagnetizing_factor(2) == 1/2
       and sh.demagnetising_factor is sh.demagnetizing_factor)
+
+# ============================================================================
+# 34-39. Version 3.5: field lines drawn whole from the flux function, the
+#        field at the centre, the legend of figure 3(b) and the colour scale
+#        of Supplementary Material II, figure 4.
+# ============================================================================
+# 34. the flux function generates B: B_u = dF/dv, B_v = -dF/du (cylinder) and
+#     B_u = (1/|v|) dF/dv, B_v = -(1/|v|) dF/du (sphere, signed Stokes function)
+ok34 = True
+gl = np.linspace(-4, 4, 1601); hh = gl[1] - gl[0]
+UL, VL = np.meshgrid(gl, gl)
+for d in (2, 3):
+    for mu_ in (0.2, 3.0, 1000.0):
+        for a_ in (0.6, 1.0, 1.6):
+            F = sh.flux_function(UL, VL, mu_, a_, 2.0, d)
+            dFv, dFu = np.gradient(F, hh, hh)
+            Hu, Hv, mr, _ = sh.fields(UL, VL, mu_, a_, 2.0, d)
+            w = 1.0 if d == 2 else 1.0 / np.maximum(np.abs(VL), 1e-300)
+            rr = np.hypot(UL, VL)
+            away = (np.abs(rr - a_) > 4*hh) & (np.abs(rr - 2.0) > 4*hh) & (np.abs(VL) > 4*hh)
+            err = np.hypot(w*dFv - mr*Hu, -w*dFu - mr*Hv)[away] / np.hypot(mr*Hu, mr*Hv)[away]
+            ok34 &= err.max() < 3e-3
+check("v3.5: the flux function generates B (finite-difference curl, both geometries)", ok34)
+
+# 35. the flux function is continuous at r = a and r = b (normal B continuous)
+ok35 = True
+th = np.linspace(0.02, 3.12, 157)
+for d in (2, 3):
+    for mu_ in (0.2, 1000.0):
+        for R0 in (1.0, 2.0):
+            fi = sh.flux_function(R0*(1 - 1e-12)*np.cos(th), R0*(1 - 1e-12)*np.sin(th), mu_, 1.0, 2.0, d)
+            fo = sh.flux_function(R0*(1 + 1e-12)*np.cos(th), R0*(1 + 1e-12)*np.sin(th), mu_, 1.0, 2.0, d)
+            ok35 &= np.allclose(fi, fo, rtol=1e-6, atol=1e-12)   # jump only ~ dF/dr * 2e-12 R0
+check("v3.5: the flux function is continuous at both interfaces", ok35)
+
+# 36. each drawn field line is a level curve through its seed, ordered along B,
+#     straight inside the cavity, and unbroken (no gaps between its points)
+ok36 = True
+for d in (2, 3):
+    for mu_, a_ in ((10.0, 1.0), (1000.0, 1.0), (1000.0, 1.6), (1000.0, 0.6)):
+        for v0 in sh.field_line_seeds(4.0, 0.25):
+            u, v = sh.field_line(v0, mu_, a_, 2.0, d, r_max=6.0)
+            F0 = sh.flux_function(0.0, v0, mu_, a_, 2.0, d)
+            Fl = sh.flux_function(u, v, mu_, a_, 2.0, d)
+            ok36 &= np.allclose(Fl, F0, rtol=1e-9, atol=1e-14)
+            ok36 &= bool(np.min(np.abs(u)) < 1e-12) and np.isclose(v[np.argmin(np.abs(u))], v0)
+            Hu, Hv, mr, _ = sh.fields(0.5*(u[1:] + u[:-1]), 0.5*(v[1:] + v[:-1]), mu_, a_, 2.0, d)
+            ok36 &= bool(np.all(Hu*np.diff(u) + Hv*np.diff(v) > 0))       # along B
+            ok36 &= bool(np.max(np.hypot(np.diff(u), np.diff(v))) <= 6.0/400)   # no gaps
+            cav = np.hypot(u, v) < a_
+            if cav.any():
+                ok36 &= np.allclose(v[cav], v0, rtol=1e-9)                  # straight
+check("v3.5: field lines are level curves through their seeds, along B, unbroken, straight in the cavity", ok36)
+
+# 37. fields() at the exact centre returns the uniform cavity field
+ok37 = True
+for d in (2, 3):
+    Hu, Hv, _, SF = sh.fields(np.array([0.0]), np.array([0.0]), 1000.0, 1.0, 2.0, d)
+    ok37 &= np.isclose(Hu[0], 1/SF) and Hv[0] == 0.0
+check("v3.5: the field at the centre equals H_int (no spurious zero at r = 0)", ok37)
+
+# 38. figure 3(b): the legend overlaps no curve, line or label of the panel
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+fig3, ax3, bx3 = pf.figure3(keep=True)
+fig3.canvas.draw()
+rend = fig3.canvas.get_renderer()
+leg = bx3.get_legend().get_window_extent(rend).expanded(1.0, 1.0)
+hit = False
+for ln in bx3.get_lines():
+    xy = bx3.transData.transform(np.column_stack(ln.get_data()))
+    inside = (xy[:, 0] > leg.x0) & (xy[:, 0] < leg.x1) & (xy[:, 1] > leg.y0) & (xy[:, 1] < leg.y1)
+    hit |= bool(inside.any())
+for t in bx3.texts:
+    hit |= t.get_window_extent(rend).overlaps(leg)
+plt.close(fig3)
+check("v3.5: figure 3(b) legend overlaps no curve and no label", not hit)
+
+# 39. SM II, figure 4: the colour scale covers every value of |H| in the wall
+_, _, _, _ = sh.first_harmonic_coefficients(1000.0, 1.0, 2.0, 3)
+rr, tt = np.meshgrid(np.linspace(1.0, 2.0, 401), np.linspace(0, np.pi, 721))
+Hw, mrw = polar(rr*(1 + 1e-12*(rr == 1.0)) - 1e-12*(rr == 2.0), tt, 1000.0, 1.0, 2.0, 3)
+check("v3.5: SM II fig. 4 scale (1e-6 to 6) contains |H| in the wall, from H_int/mu_r ~ 5.1e-6 to H_int",
+      pf.NORM_BH.vmin < Hw.min() and Hw.max() < pf.NORM_BH.vmax
+      and np.isclose(Hw.min(), Hint3/1000.0, rtol=1e-6) and round(1e6*Hw.min(), 1) == 5.1)
 
 print("\nALL CHECKS PASSED" if ok_all else "\nSOME CHECKS FAILED")

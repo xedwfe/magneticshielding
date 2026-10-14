@@ -22,7 +22,7 @@ import matplotlib
 
 from shielding import (fields, shielding_factor, SF_sph, SF_cyl, X_STAR,
                        plus_one_approximation, regime_crossover,
-                       ratio_envelope)
+                       ratio_envelope, field_line, field_line_seeds)
 
 NAMES = {3: "sphere", 2: "cylinder"}
 
@@ -45,8 +45,12 @@ def _map(ax, d, mu_r, a, b, L, n, quantity):
     im = ax.pcolormesh(U, V, np.clip(mag, 1.01e-3, 5.99),
                        norm=LogNorm(vmin=1e-3, vmax=6.0), cmap="viridis",
                        shading="auto")
-    ax.streamplot(g, g, Hu * mu_map, Hv * mu_map, density=1.1, color="w",
-                  linewidth=0.6, arrowsize=0.7)
+    # field lines of B, each drawn whole, through equally spaced points of
+    # the axis perpendicular to the applied field (their spacing carries no
+    # information about |B|, which is given by the colour)
+    for v0 in field_line_seeds(L, L / 12):
+        u, v = field_line(v0, mu_r, a, b, d, r_max=1.5 * L)
+        ax.plot(u, v, color="w", lw=0.6)
     for R in (a, b):
         ax.add_patch(Circle((0, 0), R, fill=False, ec="k", lw=1.0))
     ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")

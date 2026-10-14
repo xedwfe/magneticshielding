@@ -66,8 +66,12 @@ def fields(U, V, mu_r, a, b, d, H0=1.0):
     U = np.asarray(U, dtype=float)
     V = np.asarray(V, dtype=float)
     r = np.hypot(U, V)
-    r = np.where(r < 1e-12, 1e-12, r)
-    c, s = U / r, V / r
+    centre = r < 1e-12
+    r = np.where(centre, 1e-12, r)
+    # at the centre itself theta is undefined; any direction gives the same
+    # uniform cavity field, so take theta = 0 there
+    c = np.where(centre, 1.0, U / r)
+    s = np.where(centre, 0.0, V / r)
     h_int, P, Q, R = first_harmonic_coefficients(mu_r, a, b, d, H0)
     cavity = r < a
     shell = (r >= a) & (r <= b)
@@ -81,6 +85,80 @@ def fields(U, V, mu_r, a, b, d, H0=1.0):
     Hv = Hr * s + Ht * c
     mu_map = np.where(shell, mu_r, 1.0)
     return Hu, Hv, mu_map, H0 / h_int
+
+
+def flux_function(U, V, mu_r, a, b, d, H0=1.0):
+    """Flux function of B (units with mu0 = 1), whose level curves are the
+    field lines of B in the plane of fields().
+
+    d = 2: the vector potential A_z, with B_u = dA_z/dv and B_v = -dA_z/du;
+           the flux of B per unit length between two field lines is the
+           difference of their values.
+    d = 3: the Stokes stream function psi = |v| A_phi, multiplied by the
+           sign of v, so that the two halves of the meridional plane have
+           distinct values; the flux of B through a circle of radius |v|
+           about the axis is 2*pi*psi.
+    Both have the form G(r) * sin(t) * |sin(t)|**(d - 2), with
+        cavity  G = H_int r^(d-1)/(d-1)
+        shell   G = mu_r [P r^(d-1)/(d-1) + Q/r]
+        outside G = H0 r^(d-1)/(d-1) + R/r,
+    which is continuous at r = a and r = b because the normal component of
+    B is continuous there.
+    """
+    U = np.asarray(U, dtype=float)
+    V = np.asarray(V, dtype=float)
+    r = np.hypot(U, V)
+    rs = np.where(r < 1e-12, 1.0, r)
+    s = np.where(r < 1e-12, 0.0, V / rs)
+    h_int, P, Q, R = first_harmonic_coefficients(mu_r, a, b, d, H0)
+    p = r ** (d - 1) / (d - 1)
+    G = np.where(r < a, h_int * p,
+                 np.where(r <= b, mu_r * (P * p + Q / rs), H0 * p + R / rs))
+    return G * s * np.abs(s) ** (d - 2)
+
+
+def field_line(v0, mu_r, a, b, d, r_max, n=300, H0=1.0):
+    """Field line of B through the point (u, v) = (0, v0), v0 != 0, of the
+    axis perpendicular to the applied field, in closed form.
+
+    Every field line crosses that axis exactly once, at right angles, so the
+    line is the whole level curve of flux_function through (0, v0): with
+    F0 = flux_function(0, v0) = G(|v0|) sign(v0), each radius r >= |v0|
+    gives |sin(t)|**(d - 1) = |F0|/G(r), that is, two points of the line
+    (u = -r cos t upstream and u = +r cos t downstream). No grid and no
+    numerical integration are involved, so the line has no gaps and does
+    not depend on the resolution of a map. Returns (u, v), ordered along
+    the direction of B, for |v0| <= r <= r_max.
+    """
+    r0 = abs(v0)
+    G0 = abs(float(flux_function(0.0, r0, mu_r, a, b, d, H0)))
+
+    def branch(r):
+        G = flux_function(np.zeros_like(r), r, mu_r, a, b, d, H0)
+        s = np.clip(G0 / G, 0.0, 1.0) ** (1.0 / (d - 1))
+        return r * np.sqrt(1.0 - s ** 2), np.sign(v0) * r * s
+
+    w = np.linspace(0.0, 1.0, n)
+    r = np.unique(np.concatenate([r0 + (r_max - r0) * w ** 2,
+                                  [x for x in (a, b) if r0 < x < r_max]]))
+    # refine where consecutive points are far apart: just inside the wall the
+    # lines that cross the cavity turn sharply along the inner surface
+    for _ in range(40):
+        u, v = branch(r)
+        big = np.hypot(np.diff(u), np.diff(v)) > r_max / 400
+        if not big.any():
+            break
+        r = np.sort(np.concatenate([r, 0.5 * (r[:-1][big] + r[1:][big])]))
+    return np.concatenate([-u[::-1], u[1:]]), np.concatenate([v[::-1], v[1:]])
+
+
+def field_line_seeds(L, spacing):
+    """Points v0 = +-spacing/2, +-3*spacing/2, ... (|v0| < L) of the axis
+    perpendicular to the applied field through which the maps draw their
+    field lines. Their spacing is a choice of the plot and carries no
+    information about the magnitude of the field."""
+    n = int(np.floor(L / spacing + 0.5))
+    return spacing * (np.arange(-n, n) + 0.5)
 
 
 def fields_sphere(Z, X, mu_r, a, b, H0=1.0):

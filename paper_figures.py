@@ -4,9 +4,16 @@ paper_figures.py -- reproduces every figure of the revised manuscript
 spherical and cylindrical shells with open code" (EJP-110956) and of its
 Supplementary Materials I (figures 4 and 5) and II (figures 2 to 4).
 
-Axis convention: in the figures of the article the axis along the applied
-field is labelled z for the sphere (its symmetry axis) and x for the
-cylinder, as in the text; the notebook labels it x in both panels.
+Axis convention: the axis along the applied field is labelled z for the
+sphere (its symmetry axis) and x for the cylinder, as in the text and in
+the notebook.
+
+Field lines: the white curves of the maps are field lines of B computed in
+closed form as level curves of the exact flux function
+(shielding.field_line), through equally spaced points of the axis
+perpendicular to the applied field. Each line is drawn whole, without the
+gaps and loose ends of a streamline plot, and its spacing is a choice of
+the plot, not a measure of |B|, which is given by the colour.
 
 Offline: numpy + matplotlib only. All figures are written as vector PDF at
 their final printed width (446 pt = 6.2 in), so that fonts are legible at
@@ -16,9 +23,13 @@ the PDF; all lines, arrows and text remain vector.
 The exact fields come from shielding.py (Supplementary Material I,
 section 4). Run from the repository folder:  python paper_figures.py
 """
+import logging
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
+# fontTools warns, harmlessly, about the timestamps of the Computer Modern
+# fonts that matplotlib embeds in the PDF files; keep the output clean
+logging.getLogger("fontTools").setLevel(logging.ERROR)
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.patches import Arc, Circle, FancyArrowPatch, Wedge
@@ -31,17 +42,38 @@ plt.rcParams.update({
 TW = 6.2                     # text width in inches (iopart, 12 pt)
 CMAP = "viridis"
 NORM = LogNorm(vmin=1e-3, vmax=6.0)
+NORM_BH = LogNorm(vmin=1e-6, vmax=6.0)   # SM II figure 4: resolves |H| in the wall
 
 
 # ------------------------------------------------- physics (shielding.py)
 # The exact solution lives in shielding.py, the single source of the physics
 # shared by all scripts of the repository.
-from shielding import fields_sphere, fields_cylinder, SF_sph, SF_cyl  # noqa: E402
+from shielding import (fields_sphere, fields_cylinder, SF_sph, SF_cyl,  # noqa: E402
+                       field_line, field_line_seeds)
 
 
 # ------------------------------------------------------------ field map
+def draw_field_lines(ax, geom, mu, a, b, L, spacing, lw=0.6, ms=5.5):
+    """Field lines of B through the points v = +-spacing/2, +-3 spacing/2, ...
+    of the axis perpendicular to the applied field, each drawn whole. The
+    arrowhead of each line is placed upstream, at u = -0.62 L, or at the
+    centre for the lines that cross the cavity."""
+    d = 3 if geom == "sph" else 2
+    for v0 in field_line_seeds(L, spacing):
+        u, v = field_line(v0, mu, a, b, d, r_max=1.5 * L)
+        ax.plot(u, v, color="w", lw=lw, zorder=2, solid_capstyle="butt")
+        u_arrow = 0.0 if abs(v0) < a else -0.62 * L
+        i = int(np.argmin(np.abs(u - u_arrow) + 1e3 * (np.abs(v) > 0.95 * L)))
+        i = min(max(i, 1), len(u) - 2)
+        t = np.array([u[i + 1] - u[i - 1], v[i + 1] - v[i - 1]])
+        t *= 0.012 * L / np.hypot(*t)            # the lines are ordered along B
+        p = np.array([u[i], v[i]])
+        ax.add_patch(FancyArrowPatch(p - t, p + t, arrowstyle="-|>",
+                     mutation_scale=ms, color="w", lw=0, zorder=2))
+
+
 def field_map(ax, geom, mu, a, b, L=4.0, quantity="B", annotate=True,
-              density=1.1, labels=("", "")):
+              spacing=0.25, labels=("", ""), norm=NORM):
     n = 520
     g = np.linspace(-L, L, n)
     U, V = np.meshgrid(g, g)
@@ -50,10 +82,9 @@ def field_map(ax, geom, mu, a, b, L=4.0, quantity="B", annotate=True,
     else:
         Hu, Hv, murel, SF = fields_cylinder(U, V, mu, a, b)
     mag = np.hypot(Hu, Hv) * (murel if quantity == "B" else 1.0)
-    im = ax.pcolormesh(U, V, np.clip(mag, 1.01e-3, 5.99), norm=NORM,
-                       cmap=CMAP, shading="auto", rasterized=True)
-    ax.streamplot(g, g, Hu * murel, Hv * murel, density=density, color="w",
-                  linewidth=0.6, arrowsize=0.6, zorder=2)
+    im = ax.pcolormesh(U, V, np.clip(mag, 1.01 * norm.vmin, 0.999 * norm.vmax),
+                       norm=norm, cmap=CMAP, shading="auto", rasterized=True)
+    draw_field_lines(ax, geom, mu, a, b, L, spacing)
     for R in (a, b):
         ax.add_patch(Circle((0, 0), R, fill=False, ec="k", lw=0.9, zorder=3))
     ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")
@@ -166,7 +197,9 @@ def figure2(mu=1000.0, a=1.0, b=2.0):
 
 
 # ------------------------------------- figure 3: SF(mu) and the geometry
-def figure3(a=1.0, b=2.0):
+def figure3(a=1.0, b=2.0, keep=False):
+    """keep=True returns the figure, open, instead of closing it (used by
+    verify_revision_claims.py to check that nothing overlaps in panel (b))."""
     x0 = a / b
     fig = plt.figure(figsize=(TW, 3.15))
     gs = fig.add_gridspec(2, 2, width_ratios=[1.15, 1], height_ratios=[4.2, 1],
@@ -225,8 +258,11 @@ def figure3(a=1.0, b=2.0):
     bx.set_xlim(0, 1); bx.set_ylim(0.84, 1.38)
     bx.set_xlabel(r"$x = a/b$"); bx.set_ylabel(r"$SF_{\rm sph}/SF_{\rm cyl}$")
     bx.set_title("(b) sphere versus cylinder", pad=3)
-    bx.legend(loc="lower right", frameon=False, fontsize=8.6)
+    bx.legend(loc="upper left", bbox_to_anchor=(0.005, 0.80), frameon=False,
+              fontsize=8.6, handlelength=2.2, borderaxespad=0.2)
     fig.savefig("fig3_shielding_factor.pdf")
+    if keep:
+        return fig, ax, bx
     plt.close(fig)
 
 
@@ -234,7 +270,7 @@ def figure3(a=1.0, b=2.0):
 def sm2_mu_sweep(a=1.0, b=2.0):
     fig, axs = plt.subplots(1, 3, figsize=(TW, 2.45), constrained_layout=True)
     for ax, mu in zip(axs, (10, 100, 1000)):
-        im, SF = field_map(ax, "sph", mu, a, b, annotate=False, density=0.8,
+        im, SF = field_map(ax, "sph", mu, a, b, annotate=False, spacing=1/3,
                            labels=("$z$ (m)", "$x$ (m)" if mu == 10 else ""))
         ax.set_title(rf"$\mu_r = {mu}$:  $SF = {SF:.1f}$", pad=3)
     colorbar_like_panels(fig, im, axs, r"$|\vec B|/(\mu_0 H_0)$", pad=0.01)
@@ -248,7 +284,7 @@ def sm2_geometry(mu=1000.0, b=2.0):
         for j, geom in enumerate(("sph", "cyl")):
             ax = axs[i, j]
             im, SF = field_map(ax, geom, mu, x * b, b, annotate=False,
-                               density=0.8, labels=(
+                               spacing=1/3, labels=(
                                    ("$z$ (m)" if geom == "sph" else "$x$ (m)") if i else "",
                                    ("$x$ (m)" if geom == "sph" else "$y$ (m)")))
             name = "sphere" if geom == "sph" else "cylinder"
@@ -261,9 +297,9 @@ def sm2_geometry(mu=1000.0, b=2.0):
 def sm2_B_vs_H(mu=1000.0, a=1.0, b=2.0):
     fig, axs = plt.subplots(1, 2, figsize=(TW, 3.05), constrained_layout=True)
     im, _ = field_map(axs[0], "sph", mu, a, b, quantity="B", annotate=False,
-                      labels=("$z$ (m)", "$x$ (m)"))
+                      labels=("$z$ (m)", "$x$ (m)"), norm=NORM_BH)
     field_map(axs[1], "sph", mu, a, b, quantity="H", annotate=False,
-              labels=("$z$ (m)", ""))
+              labels=("$z$ (m)", ""), norm=NORM_BH)
     axs[0].set_title(r"(a) $|\vec B|/(\mu_0H_0)$", pad=3)
     axs[1].set_title(r"(b) $|\vec H|/H_0$", pad=3)
     colorbar_like_panels(fig, im, axs, "field magnitude (normalized)", pad=0.01)

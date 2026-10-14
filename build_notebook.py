@@ -32,18 +32,21 @@ Binder; nothing needs to be installed.
 Binder: *Run > Run All Cells*) and move the sliders in section 2.
 
 **What the maps show.** The colour gives $|\vec B|/(\mu_0H_0)$ on a logarithmic
-scale. The white curves are streamlines of $\vec B$, everywhere tangent to the
-field; their spacing carries no information about the field strength, which is
-read from the colour alone. The boxes give the cavity field $H_{\rm int}/H_0$ and
-the shielding factor $SF = H_0/H_{\rm int}$.
+scale. The white curves are field lines of $\vec B$, computed exactly as level
+curves of the flux function and drawn through equally spaced points of the axis
+perpendicular to the applied field; each line is drawn whole, and their spacing
+carries no information about the field strength, which is read from the colour
+alone. The boxes give the cavity field $H_{\rm int}/H_0$ and the shielding factor
+$SF = H_0/H_{\rm int}$.
 
 **Model.** Linear, isotropic and homogeneous shell of relative permeability
 $\mu_r$, inner radius $a$, outer radius $b$, in vacuum; $\vec B = \mu_0\vec H$ in
 vacuum and $\vec B = \mu_0\mu_r\vec H$ in the shell, whose wall is the region
 $a<r<b$. The sphere is shown in a meridional plane and the cylinder in its
-transverse plane. In both panels the applied field points to the right, along
-the axis labelled $x$; for the sphere this axis is the symmetry axis, called $z$
-in the article and in its supplements. The angle $\theta$ is measured from the
+transverse plane. In both panels the applied field points to the right: along
+the symmetry axis $z$ of the sphere, whose meridional plane is drawn with axes
+$z$ and $x$, and along the axis $x$ of the cylinder, as in the article. The
+angle $\theta$ is measured from the
 direction of the applied field: the poles of each surface are its points with
 $\theta = 0$ and $\theta = \pi$, and its equator is formed by the points with
 $\theta = \pi/2$.
@@ -56,6 +59,8 @@ from matplotlib.patches import Circle
 import ipywidgets as widgets
 from ipywidgets import interact
 %matplotlib inline
+%config InlineBackend.figure_formats = ["svg"]
+plt.rcParams.update({"font.size": 11})
 """),
 md(r"""
 ## 1. The exact solution
@@ -71,7 +76,8 @@ md(r"""
 ## 2. Explore the two shells (Activities 1 to 3)
 
 Sliders: relative permeability `mu_r`, radius ratio `a/b`, applied field `H0`,
-outer radius `b`, half-width `L` of the window and grid resolution `N`.
+outer radius `b`, `half-width` of the plotted window and number of `grid` points
+along each side of the colour map.
 Changing `H0` leaves every normalized quantity unchanged: the model is linear, so
 the shielding factor does not depend on the applied field (in real materials it
 does, through saturation).
@@ -86,43 +92,61 @@ def sci(v):
         return f"{v:.3g}"
     return f"{v / 10**e:.2f}\\times10^{{{e}}}"
 
+def draw_field_lines(ax, mu_r, a, b, d, L, n_lines=24):
+    # field lines of B through equally spaced points of the vertical axis,
+    # each drawn whole (field_line is in the core cell above); arrowheads
+    # upstream, or at the centre for the lines that cross the cavity
+    for v0 in field_line_seeds(L, 2 * L / n_lines):
+        u, v = field_line(v0, mu_r, a, b, d, r_max=1.5 * L)
+        ax.plot(u, v, color="w", lw=0.7)
+        u_arrow = 0.0 if abs(v0) < a else -0.62 * L
+        i = int(np.argmin(np.abs(u - u_arrow) + 1e3 * (np.abs(v) > 0.95 * L)))
+        i = min(max(i, 1), len(u) - 2)
+        ax.annotate("", xy=(u[i + 1], v[i + 1]), xytext=(u[i - 1], v[i - 1]),
+                    arrowprops=dict(arrowstyle="-|>", color="w", lw=0, mutation_scale=9))
+
 def draw_maps(mu_r=1000.0, ratio=0.5, H0=1.0, b=2.0, L=4.0, N=350, quantity="B"):
     a = ratio * b
     g = np.linspace(-L, L, int(N))
     U, V = np.meshgrid(g, g)
-    fig, axs = plt.subplots(1, 2, figsize=(13, 5.4))
-    panels = ((axs[0], 3, "Spherical shell (meridional plane)"),
-              (axs[1], 2, "Cylindrical shell (transverse plane)"))
-    for ax, d, name in panels:
+    fig, axs = plt.subplots(1, 2, figsize=(7.6, 3.9), dpi=200, constrained_layout=True)
+    panels = ((axs[0], 3, "Spherical shell (meridional plane)", "z (m)", "x (m)"),
+              (axs[1], 2, "Cylindrical shell (transverse plane)", "x (m)", "y (m)"))
+    for ax, d, name, xlabel, ylabel in panels:
         Hu, Hv, mu_map, SF = fields(U, V, mu_r, a, b, d, H0)
         weight = mu_map if quantity == "B" else 1.0
         mag = np.hypot(Hu, Hv) * weight / H0
         im = ax.pcolormesh(U, V, np.clip(mag, 1.01e-3, 5.99), norm=NORM,
-                           cmap="viridis", shading="auto")
-        ax.streamplot(g, g, Hu * mu_map, Hv * mu_map, density=1.2, color="w",
-                      linewidth=0.7, arrowsize=0.8)
+                           cmap="viridis", shading="auto", rasterized=True)
+        draw_field_lines(ax, mu_r, a, b, d, L)
         for R in (a, b):
             ax.add_patch(Circle((0, 0), R, fill=False, ec="k", lw=1.2))
         ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")
-        ax.set_xlabel("x (m)"); ax.set_ylabel("y (m)")
-        ax.set_title(f"{name},  $\\mu_r = {mu_r:.4g}$")
-        ax.text(0.02, 0.97, f"$H_{{\\rm int}}/H_0 = {sci(1/SF)}$\n$SF = {SF:.1f}$",
-                transform=ax.transAxes, va="top",
+        ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+        ax.set_title(f"{name}\n$\\mu_r = {mu_r:.4g}$, $a/b = {ratio:.2f}$", fontsize=11)
+        ax.text(0.03, 0.97, f"$H_{{\\rm int}}/H_0 = {sci(1/SF)}$\n$SF = {SF:.1f}$",
+                transform=ax.transAxes, va="top", fontsize=10,
                 bbox=dict(boxstyle="round", fc="white", alpha=0.9))
-        cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
-        cb.set_label(r"$|\vec B|/(\mu_0 H_0)$ (log)" if quantity == "B"
-                     else r"$|\vec H|/H_0$ (log)")
-    plt.tight_layout()
+    cb = fig.colorbar(im, ax=axs, shrink=0.9, pad=0.02)
+    cb.set_label(r"$|\vec B|/(\mu_0 H_0)$ (log)" if quantity == "B"
+                 else r"$|\vec H|/H_0$ (log)")
     plt.show()
 
-interact(draw_maps,
-         mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01, description="mu_r"),
-         ratio=widgets.FloatSlider(value=0.5, min=0.05, max=0.95, step=0.01, description="a/b"),
-         H0=widgets.FloatSlider(value=1.0, min=0.1, max=5.0, step=0.1, description="H0"),
-         b=widgets.FloatSlider(value=2.0, min=0.5, max=3.5, step=0.1, description="b"),
-         L=widgets.FloatSlider(value=4.0, min=2.0, max=8.0, step=0.5, description="L"),
-         N=widgets.IntSlider(value=350, min=100, max=600, step=10, description="N"),
-         quantity=widgets.fixed("B"));
+controls = dict(
+    mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01,
+                                description="mu_r", readout_format=".4g"),
+    ratio=widgets.FloatSlider(value=0.5, min=0.05, max=0.95, step=0.01, description="a/b"),
+    H0=widgets.FloatSlider(value=1.0, min=0.1, max=5.0, step=0.1, description="H0"),
+    b=widgets.FloatSlider(value=2.0, min=0.5, max=3.5, step=0.1, description="b"),
+    L=widgets.FloatSlider(value=4.0, min=2.0, max=8.0, step=0.5, description="half-width"),
+    N=widgets.IntSlider(value=350, min=100, max=600, step=10, description="grid"),
+)
+for w in controls.values():
+    w.style.description_width = "68px"
+    w.layout.width = "250px"
+ui = widgets.GridBox(list(controls.values()),
+                     layout=widgets.Layout(grid_template_columns="repeat(3, 252px)"))
+display(ui, widgets.interactive_output(draw_maps, controls))
 """),
 md(r"""
 ## 3. The shielding factor as a function of $\mu_r$ (Activity 2)
@@ -156,19 +180,23 @@ interact(plot_sf, ratio=widgets.FloatSlider(value=0.5, min=0.05, max=0.95, step=
 md(r"""
 ## 4. Sphere or cylinder? (Activity 3)
 
-Choose $\mu_r$ and $a/b$ and compare the two shells. Then find, by moving the
-`a/b` slider, the value at which the two shielding factors are equal, and repeat
-for other permeabilities. The cell after this one checks your answer.
+Choose $\mu_r$ and $a/b$ and compare the two shells. Then find, by bisection with
+the `a/b` slider, the value at which the two shielding factors are equal (their
+ratio is 1 and the better shield changes), and repeat for other permeabilities.
+The cell after this one gives the exact answer: run it only after your search.
 """),
 code(r"""
 def compare(mu_r=1000.0, ratio=0.3):
     s, c = shielding_factor(mu_r, ratio, 3), shielding_factor(mu_r, ratio, 2)
     better = "sphere" if s > c else ("cylinder" if c > s else "neither")
-    print(f"SF_sph = {s:.2f}   SF_cyl = {c:.2f}   better shield: {better}")
+    print(f"a/b = {ratio:.3f}:  SF_sph = {s:.6g}   SF_cyl = {c:.6g}   "
+          f"SF_sph/SF_cyl = {s / c:.6f}   better shield: {better}")
 
 interact(compare,
-         mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01, description="mu_r"),
-         ratio=widgets.FloatSlider(value=0.3, min=0.05, max=0.95, step=0.005, description="a/b"));
+         mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01,
+                                     description="mu_r", readout_format=".4g"),
+         ratio=widgets.FloatSlider(value=0.3, min=0.05, max=0.95, step=0.005,
+                                   description="a/b", readout_format=".3f"));
 """),
 code(r"""
 # Check your answer: crossing point by bisection, compared with the exact value
@@ -187,7 +215,8 @@ md(r"""
 ## 5. $\vec B$ versus $\vec H$ (Activity 4)
 
 The same configuration shown as $|\vec B|/(\mu_0H_0)$ and as $|\vec H|/H_0$, on
-the same colour scale. Where is each one largest, and why? Why is the field just
+the same colour scale, which here extends down to $10^{-6}$ so that the field
+strength in the wall is resolved. Where is each one largest, and why? Why is the field just
 outside the shell weak near the equator and strong near the poles? (Hint: which
 component of which field is continuous at the surface?)
 """),
@@ -195,27 +224,32 @@ code(r"""
 def draw_B_vs_H(mu_r=1000.0, ratio=0.5, geometry="sphere"):
     d = 3 if geometry == "sphere" else 2
     b, L = 2.0, 4.0
+    a = ratio * b
     g = np.linspace(-L, L, 350)
     U, V = np.meshgrid(g, g)
-    Hu, Hv, mu_map, SF = fields(U, V, mu_r, ratio * b, b, d)
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5.2))
+    Hu, Hv, mu_map, SF = fields(U, V, mu_r, a, b, d)
+    norm = LogNorm(vmin=1e-6, vmax=6.0)    # wide enough to resolve |H| in the wall
+    fig, axs = plt.subplots(1, 2, figsize=(7.6, 3.9), dpi=200, constrained_layout=True)
     for ax, weight, label in ((axs[0], mu_map, r"$|\vec B|/(\mu_0H_0)$"),
                               (axs[1], 1.0, r"$|\vec H|/H_0$")):
-        im = ax.pcolormesh(U, V, np.clip(np.hypot(Hu, Hv) * weight, 1.01e-3, 5.99),
-                           norm=NORM, cmap="viridis", shading="auto")
-        ax.streamplot(g, g, Hu * mu_map, Hv * mu_map, density=1.1, color="w",
-                      linewidth=0.6, arrowsize=0.7)
-        for R in (ratio * b, b):
+        im = ax.pcolormesh(U, V, np.clip(np.hypot(Hu, Hv) * weight, 1.01e-6, 5.99),
+                           norm=norm, cmap="viridis", shading="auto", rasterized=True)
+        draw_field_lines(ax, mu_r, a, b, d, L)
+        for R in (a, b):
             ax.add_patch(Circle((0, 0), R, fill=False, ec="k", lw=1.2))
-        ax.set_aspect("equal"); ax.set_title(f"{geometry}: {label}")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
-    plt.tight_layout(); plt.show()
+        ax.set_xlim(-L, L); ax.set_ylim(-L, L); ax.set_aspect("equal")
+        ax.set_xlabel("z (m)" if d == 3 else "x (m)")
+        ax.set_ylabel("x (m)" if d == 3 else "y (m)")
+        ax.set_title(f"{geometry}: {label}", fontsize=11)
+    fig.colorbar(im, ax=axs, shrink=0.9, pad=0.02, label="normalized magnitude (log)")
+    plt.show()
     shell = mu_map > 1
     print(f"in the shell: max |B|/(mu0 H0) = {(np.hypot(Hu, Hv) * mu_map)[shell].max():.2f},"
           f"  max |H|/H0 = {np.hypot(Hu, Hv)[shell].max():.2e}")
 
 interact(draw_B_vs_H,
-         mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01, description="mu_r"),
+         mu_r=widgets.FloatLogSlider(value=1000, base=10, min=0, max=5, step=0.01,
+                                     description="mu_r", readout_format=".4g"),
          ratio=widgets.FloatSlider(value=0.5, min=0.05, max=0.95, step=0.01, description="a/b"),
          geometry=widgets.Dropdown(options=["sphere", "cylinder"], value="sphere"));
 """),
