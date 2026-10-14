@@ -9,7 +9,8 @@ shell and of an infinitely long cylindrical shell in a uniform applied field,
 treats both geometries in a single calculation, and reproduces every figure of
 the article and the code-generated figures of its two supplements. All scripts
 run offline and depend only on `numpy` and `matplotlib` (plus `ipywidgets` for
-the notebook). The code is released under the MIT License (see `LICENSE`).
+the notebook). The repository is released under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0; see `LICENSE`).
 
 ## The physics in one paragraph
 
@@ -54,7 +55,7 @@ all cells; it is self-contained.
 | `verify_cavity_uniformity.py` | Independent check, by a finite-volume solution, that the cavity field is exactly uniform. |
 | `build_notebook.py` | Maintainer tool: rebuilds the notebook from `shielding.py`. |
 | `requirements.txt` | Python packages. |
-| `LICENSE` | MIT License. |
+| `LICENSE` | Creative Commons Attribution 4.0 International License (CC BY 4.0). |
 
 ## Reproducing the figures
 
@@ -138,6 +139,12 @@ finite length and apertures are outside its scope.
 
 ## History
 
+**License (October 2026).**
+The repository is now distributed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0), the license declared in the Zenodo record of
+version 3.4; the code is unchanged. Earlier releases were distributed under the
+MIT License.
+
 **Version 3.4 (2026, resubmitted revision).**
 The colour bars of the field maps (figure 2 of the article and figures 2 to 4
 of Supplementary Material II) now span exactly the height of the maps. The
@@ -195,10 +202,18 @@ verified by the authors, who take full responsibility for them.
 
 ## License
 
-MIT License; see `LICENSE`.
+Copyright (c) 2026 Murilo S Marques, Rafael R Marques, Jonatan J da Silva and
+Edward F de Almeida Júnior.
+
+Creative Commons Attribution 4.0 International (CC BY 4.0); see `LICENSE` or
+https://creativecommons.org/licenses/by/4.0/. You may share and adapt the
+material for any purpose, provided that you give appropriate credit (cite the
+article and the Zenodo record below), provide a link to the license and
+indicate if changes were made.
 
 ## Citation
 
 If you use this code, please cite the article (reference to be added upon
-publication) and the archived copy of this repository on Zenodo,
-https://doi.org/10.5281/zenodo.23270080.
+publication) and the archived copy of this repository on Zenodo: version 3.4,
+used in the article, https://doi.org/10.5281/zenodo.23329198 (all versions:
+https://doi.org/10.5281/zenodo.23270079).
